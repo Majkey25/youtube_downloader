@@ -1,0 +1,87 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #212121;
+    color: #98FCFF;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+h1 {
+    font-size: 3em; /* Make title much bigger */
+    margin-bottom: 20px; /* Space below the title */
+}
+
+p {
+    font-size: 1.5em; /* Increase size of description */
+    margin-bottom: 30px; /* Space below the description */
+}
+
+.input-group {
+    margin-bottom: 20px; /* Increase spacing */
+}
+
+select,
+input[type="url"],
+input[type="file"] {
+    width: 100%;
+    padding: 12px; /* Increased padding */
+    border-radius: 5px;
+    border: 1px solid #dddddd;
+    font-size: 1.2em; /* Make input fields bigger */
+}
+
+button {
+    padding: 15px 25px; /* Make button bigger */
+    border: none;
+    border-radius: 5px;
+    background-color: #4caf50;
+    color: white;
+    cursor: pointer;
+    font-size: 1.2em; /* Make button text bigger */
+    transition: all 0.3s ease; /* Smooth transition for hover effect */
+    margin: 0 auto; /* Center the button */
+    display: block; /* Ensure it takes the full width */
+}
+
+button:hover {
+    background-color: #45a049;
+    transform: scale(1.1); /* Increase button size on hover */
+}
+
+#loadingContainer {
+    display: none; /* Hide loading bar */
+    width: 50%; /* Width of loading bar */
+    background-color: #f3f3f3;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    height: 20px;
+    margin-top: 10px;
+    position: relative;
+}
+
+#loadingBar {
+    display: block;
+    height: 100%;
+    background-color: #4caf50;
+    width: 0;
+    border-radius: 5px;
+    transition: width 0.4s;
+}
+
+#loadingText {
+    display: none; /* Hide loading text */
+    font-size: 1.5em; /* Increased loading text size */
+    text-align: center;
+    margin: 20px 0;
+    color: #98FCFF; /* Change text color to be visible */
+}
+
+#error {
+    color: red;
+    font-size: 1.2em; /* Increase error message size */
+}
