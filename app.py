@@ -1,12 +1,10 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_from_directory
 import subprocess
 import os
 import threading
-import re
 
 app = Flask(__name__)
-progress = 0
-output_file = ""  # Initialize output_file globally
+output_file = ""
 
 @app.route('/')
 def index():
@@ -14,41 +12,48 @@ def index():
 
 @app.route('/download', methods=['POST'])
 def download():
-    global progress, output_file  # Declare both progress and output_file as global
-    progress = 0
+    global output_file
     youtube_link = request.form['youtubeLink']
 
     def run_download():
-        global progress, output_file
-        title = youtube_link.split('=')[-1]
-        output_file = f"{title}.mp3"  # Set output_file inside the thread
-        output_path = os.path.expanduser(f'~/Downloads/{output_file}')
+        global output_file
+        
+        # Extract a valid title from the YouTube link
+        title = youtube_link.split('=')[-1]  # Adjust this according to your needs
+        output_file = f"{title}.mp3"
+        output_path = os.path.expanduser(f'~/Downloads/{output_file}')  # Path for the downloaded file
+
+        # Prepare the yt-dlp command
         cmd = ['yt-dlp', '-x', '--audio-format', 'mp3', '-o', output_path, youtube_link]
 
+        # Run the command and capture output
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-        while True:
-            output = process.stdout.readline()
-            if output == '' and process.poll() is not None:
-                break
-            if output:
-                update_progress(output)
-        process.wait()
+        # Wait for the download process to complete and capture output
+        stdout, stderr = process.communicate()
+        
+        # Log the output for debugging
+        print("STDOUT:", stdout)
+        print("STDERR:", stderr)
+        
+        if process.returncode != 0:
+            print(f"Error downloading file: {stderr}")  # Log error for debugging
+            output_file = ""  # Clear output file if there was an error
 
+    # Start the download in a separate thread
     thread = threading.Thread(target=run_download)
     thread.start()
 
-    return jsonify({'status': 'Downloading...', 'output_file': output_file})  # Now output_file is defined
+    # Return a URL for the downloaded file (initially empty)
+    return jsonify({'status': 'Downloading...', 'output_file': output_file})
 
-@app.route('/progress')
-def get_progress():
-    return jsonify({'progress': progress})
+@app.route('/downloads/<filename>')
+def download_file(filename):
+    downloads_path = os.path.expanduser('~/Downloads')  # Ensure this path is correct
+    try:
+        return send_from_directory(downloads_path, filename)
+    except FileNotFoundError:
+        return jsonify({'error': 'File not found.'}), 404  # Return a 404 error if the file is not found
 
-def update_progress(output):
-    global progress
-    match = re.search(r'(\d+)%', output)
-    if match:
-        progress = int(match.group(1))
-
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    app.run(host="127.0.0.1", port=8080)

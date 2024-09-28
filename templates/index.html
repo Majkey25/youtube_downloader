@@ -5,65 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YouTube MP3 Downloader</title>
     <link rel="stylesheet" href="/static/styles.css">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
-        }
-        h1 {
-            font-size: 36px;
-        }
-        p {
-            font-size: 18px;
-        }
-        .input-group {
-            margin: 20px 0;
-        }
-        input[type="text"] {
-            width: 80%;
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 18px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        button:hover {
-            background-color: #45a049;
-            transform: scale(1.05);
-        }
-        #loadingContainer {
-            display: none;
-            margin-top: 20px;
-        }
-        #loadingBar {
-            width: 0;
-            height: 30px;
-            background-color: #4CAF50;
-            border-radius: 4px;
-        }
-        #error {
-            color: red;
-            margin-top: 20px;
-        }
-        #downloadLink {
-            display: none;
-            margin-top: 20px;
-        }
-    </style>
+    <link rel="icon" href="/static/logo/logo-512x512.png" type="image/png">
 </head>
 <body>
     <h1>YouTube MP3 Downloader</h1>
-    <p>Provide a YouTube link to download the mp3.</p>
+    <p>Provide a YouTube link to download the MP3.</p>
 
     <form id="downloadForm" enctype="multipart/form-data">
         <div class="input-group">
@@ -74,17 +20,14 @@
         </div>
     </form>
 
-    <div id="loadingText">Loading...</div>
-    <div id="loadingContainer">
-        <div id="loadingBar"></div>
-    </div>
+    <div id="loadingText" style="display: none;">Loading</div>
     <div id="error"></div>
-    
+
     <div id="downloadLink">
-        <p>Download complete! Click the link below to download your mp3:</p>
+        <p>Download complete! Click the link below to download your MP3:</p>
         <a id="downloadAnchor" href="" download>Download MP3</a>
     </div>
-
+    
     <script src="/static/app.js"></script>
 </body>
 </html>
