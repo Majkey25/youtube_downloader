@@ -78,13 +78,20 @@ button:hover {
     display: none; /* Hidden by default */
     margin-top: 20px;
     font-size: 1.2em; /* Font size for the download message */
-}
+    text-align: center; /* Center text */
+   }
 
 #downloadLink a {
-    color: #4caf50; /* Green link color */
+    color: #ffffff; /* Green link color */
     text-decoration: underline; /* Underline link */
+    padding: 10px 20px;  /* Padding for the link */
+    background-color: #4CAF50;  /* Zelená barva */
+    border-radius: 5px;  /* Zaoblení rohů */
+    display: inline-block;  /* Umožňuje margin a padding */
+    font-size: 16px;  /* Velikost písma */
 }
 
 #downloadLink a:hover {
+    background-color: #03b809;  /* Tmavší zelená při najetí */
     text-decoration: none; /* Remove underline on hover */
 }
