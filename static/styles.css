@@ -10,6 +10,13 @@ body {
     justify-content: center;
     min-height: 100vh; /* Full height */
 }
+footer {
+    margin-top: auto; /* Push footer to the bottom */
+    text-align: center;
+    font-size: 0.7em; /* Smaller font size */
+    color: #666; /* Subtle color */
+    padding: 10px 0; /* Add some padding */
+}
 
 h1 {
     font-size: 4em; 

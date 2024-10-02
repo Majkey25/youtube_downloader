@@ -29,6 +29,10 @@
         <a id="downloadAnchor" href="" download>Download .mp3</a>
     </div>
     
+    <footer style="margin-top: 50px; text-align: center; font-size: 0.8em; color: #98FCFF;">
+        <p>Made by Matěj Teplý &copy; <span id="currentYear"></span></p>
+    </footer>
+
     <script src="/static/app.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
@@ -41,6 +45,8 @@
                     });
             });
         }
+    document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
     </script>
 </body>
 </html>
