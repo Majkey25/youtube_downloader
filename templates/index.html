@@ -6,6 +6,7 @@
     <title>YouTube .mp3 Downloader</title>
     <link rel="stylesheet" href="/static/styles.css">
     <link rel="icon" href="/static/logo/logo-512x512.png" type="image/png">
+    <link rel="manifest" href="/static/manifest.json">
 </head>
 <body>
     <h1>YouTube MP3 Downloader</h1>
@@ -29,5 +30,17 @@
     </div>
     
     <script src="/static/app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registered:', registration);
+                    }).catch(error => {
+                        console.log('ServiceWorker registration failed:', error);
+                    });
+            });
+        }
+    </script>
 </body>
 </html>

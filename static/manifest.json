@@ -1,0 +1,23 @@
+{
+    "name": "YouTube MP3 Downloader",
+    "short_name": "YT MP3",
+    "description": "Download MP3 files from YouTube.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#212121",
+    "theme_color": "#212121",
+    "orientation": "portrait",
+    "icons": [
+      {
+        "src": "/static/logo/logo-192x192.png",
+        "sizes": "192x192",
+        "type": "image/png"
+      },
+      {
+        "src": "/static/logo/logo-512x512.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ]
+  }
+  

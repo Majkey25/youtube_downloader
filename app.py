@@ -16,6 +16,10 @@ if not os.path.exists(DOWNLOAD_FOLDER):
 def index():
     return render_template('index.html')
 
+@app.route('/static/<path:path>')
+def send_static(path):
+    return send_from_directory('static', path)
+
 @app.route('/download', methods=['POST'])
 def download():
     global output_file
