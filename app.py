@@ -6,12 +6,12 @@ import re
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Set your secret key for cookie signing
-output_file = ""  # Sem uložíme název souboru
+output_file = ""  # Variable to store the downloaded file name
 
-# Nastavíme cestu pro ukládání stažených souborů na serveru
+# Set the path for saving downloaded files on the server
 DOWNLOAD_FOLDER = 'downloads'
 if not os.path.exists(DOWNLOAD_FOLDER):
-    os.makedirs(DOWNLOAD_FOLDER)  # Vytvoří složku, pokud neexistuje
+    os.makedirs(DOWNLOAD_FOLDER)  # Create folder if it doesn't exist
 
 @app.route('/')
 def index():
@@ -29,10 +29,10 @@ def download():
     def run_download():
         global output_file
 
-        # Získání platného názvu souboru z odkazu YouTube
+        # Get a valid filename from the YouTube link
         video_id = None
         
-        # Ověření formátu odkazu YouTube
+        # Validate the YouTube link format
         if 'v=' in youtube_link:
             video_id = youtube_link.split('v=')[1].split('&')[0]
         elif 'youtu.be/' in youtube_link:
@@ -42,42 +42,49 @@ def download():
             print("Invalid YouTube link.")
             return
 
-        # Čistíme název souboru a omezujeme zakázané znaky
+        # Clean the filename and limit forbidden characters
         title = re.sub(r'[<>:"/\\|?*]', '', video_id)
         output_file = f"{title}.mp3"
-        output_path = os.path.join(DOWNLOAD_FOLDER, output_file)  # Uložíme soubor na server
+        output_path = os.path.join(DOWNLOAD_FOLDER, output_file)  # Save file on server
 
-        # Příprava příkazu yt-dlp pro stažení a konverzi do MP3
+        # Prepare the yt-dlp command to download and convert to MP3
         cmd = ['yt-dlp', '-x', '--audio-format', 'mp3', '-o', output_path, youtube_link]
 
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        stdout, stderr = process.communicate()
+        try:
+            # Run the command and capture stdout and stderr
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            stdout, stderr = process.communicate()
 
-        # Debugging log
-        print("STDOUT:", stdout)
-        print("STDERR:", stderr)
+            # Debugging log
+            print("STDOUT:", stdout)
+            print("STDERR:", stderr)
 
-        # Zkontrolujme, zda došlo k chybě
-        if process.returncode != 0:
-            print(f"Error downloading file: {stderr}")
-            output_file = ""  # Vymazat jméno souboru při chybě
+            # Check if there was an error
+            if process.returncode != 0:
+                print(f"Error downloading file: {stderr}")
+                output_file = ""  # Clear the filename on error
 
-    # Spustit stahování v samostatném vlákně
+        except Exception as e:
+            print(f"An error occurred: {str(e)}")
+            output_file = ""  # Clear the filename on error
+
+    # Start the download in a separate thread
     download_thread = threading.Thread(target=run_download)
     download_thread.start()
-    download_thread.join()  # Počkat, než vlákno dokončí stahování
+    download_thread.join()  # Wait for the thread to finish
 
-    # Zkontrolujeme, zda byl soubor úspěšně stažen
+    # Check if the file was downloaded successfully
     if output_file and os.path.exists(os.path.join(DOWNLOAD_FOLDER, output_file)):
         response = make_response(jsonify({'status': 'Download complete', 'output_file': output_file}))
         response.set_cookie('downloaded_file', output_file)  # Set a cookie with the downloaded file name
         return response
     else:
+        print(f"Output file: {output_file}")
         return jsonify({'error': 'Failed to download file.'}), 500
 
 @app.route('/downloads/<filename>')
 def download_file(filename):
-    return send_from_directory(DOWNLOAD_FOLDER, filename, as_attachment=True)  # Vrátíme soubor jako přílohu ke stažení
+    return send_from_directory(DOWNLOAD_FOLDER, filename, as_attachment=True)  # Return the file as an attachment to download
 
 @app.route('/check_cookie')
 def check_cookie():
@@ -93,7 +100,7 @@ def delete_file():
         file_path = os.path.join(DOWNLOAD_FOLDER, output_file)
         if os.path.exists(file_path):
             os.remove(file_path)
-            output_file = ""  # Vymazání názvu souboru
+            output_file = ""  # Clear the filename
             return jsonify({'status': 'File deleted successfully'})
     return jsonify({'error': 'File not found'}), 404
 
