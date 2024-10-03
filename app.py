@@ -1,10 +1,11 @@
-from flask import Flask, request, jsonify, render_template, send_from_directory
+from flask import Flask, request, jsonify, render_template, send_from_directory, make_response
 import subprocess
 import os
 import threading
 import re
 
 app = Flask(__name__)
+app.secret_key = 'your_secret_key'  # Set your secret key for cookie signing
 output_file = ""  # Sem uložíme název souboru
 
 # Nastavíme cestu pro ukládání stažených souborů na serveru
@@ -68,13 +69,22 @@ def download():
 
     # Zkontrolujeme, zda byl soubor úspěšně stažen
     if output_file and os.path.exists(os.path.join(DOWNLOAD_FOLDER, output_file)):
-        return jsonify({'status': 'Download complete', 'output_file': output_file})
+        response = make_response(jsonify({'status': 'Download complete', 'output_file': output_file}))
+        response.set_cookie('downloaded_file', output_file)  # Set a cookie with the downloaded file name
+        return response
     else:
         return jsonify({'error': 'Failed to download file.'}), 500
 
 @app.route('/downloads/<filename>')
 def download_file(filename):
     return send_from_directory(DOWNLOAD_FOLDER, filename, as_attachment=True)  # Vrátíme soubor jako přílohu ke stažení
+
+@app.route('/check_cookie')
+def check_cookie():
+    downloaded_file = request.cookies.get('downloaded_file')
+    if downloaded_file:
+        return f'Last downloaded file: {downloaded_file}'
+    return 'No file downloaded yet.'
 
 @app.route('/delete', methods=['POST'])
 def delete_file():
@@ -87,6 +97,11 @@ def delete_file():
             return jsonify({'status': 'File deleted successfully'})
     return jsonify({'error': 'File not found'}), 404
 
+@app.route('/delete_cookie', methods=['POST'])
+def delete_cookie():
+    response = make_response(jsonify({'status': 'Cookie deleted'}))
+    response.set_cookie('downloaded_file', '', expires=0)  # Delete the cookie
+    return response
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
