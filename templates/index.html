@@ -29,8 +29,9 @@
         <a id="downloadAnchor" href="" download>Download .mp3</a>
     </div>
     
-    <footer style="margin-top: 50px; text-align: center; font-size: 0.8em; color: #98FCFF;">
-        <p>Made by Matěj Teplý &copy; <span id="currentYear"></span></p>
+    <footer style="text-align: center; margin-top: 50px;">
+        <p>Made by Matěj Teplý</p>
+        <p>&copy; <span id="year"></span> All rights reserved.</p>
     </footer>
 
     <script src="/static/app.js"></script>
@@ -45,8 +46,7 @@
                     });
             });
         }
-    document.getElementById('currentYear').textContent = new Date().getFullYear();
-    </script>
+        document.getElementById("year").textContent = new Date().getFullYear();
     </script>
 </body>
 </html>

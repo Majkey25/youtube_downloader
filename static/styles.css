@@ -10,14 +10,6 @@ body {
     justify-content: center;
     min-height: 100vh; /* Full height */
 }
-footer {
-    margin-top: auto; /* Push footer to the bottom */
-    text-align: center;
-    font-size: 0.7em; /* Smaller font size */
-    color: #666; /* Subtle color */
-    padding: 10px 0; /* Add some padding */
-}
-
 h1 {
     font-size: 4em; 
     margin-bottom: 20px;
@@ -101,4 +93,12 @@ button:hover {
 #downloadLink a:hover {
     background-color: #03b809;  /* Tmavší zelená při najetí */
     text-decoration: none; /* Remove underline on hover */
+}
+footer {
+    display: flex; /* Enables flexbox for the footer */
+    justify-content: center; /* Centers the footer contents horizontally */
+    align-items: center; /* Centers the footer contents vertically */
+    margin-top: auto; /* Pushes the footer to the bottom */
+    padding: 20px 0; /* Adds some space above and below the text */
+    gap: 20px;
 }
