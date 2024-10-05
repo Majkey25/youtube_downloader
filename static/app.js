@@ -1,62 +1,68 @@
 let isDownloading = false;
 let loadingInterval;
 
+// Event listener for the download form submission
 document.getElementById('downloadForm').addEventListener('submit', async function(event) {
     event.preventDefault();
 
     const loadingText = document.getElementById('loadingText');
     const downloadLink = document.getElementById('downloadLink');
     const downloadAnchor = document.getElementById('downloadAnchor');
-    const errorText = document.getElementById('error');  // Pro chybové zprávy
+    const errorText = document.getElementById('error');  // For error messages
 
-    // Reset a zobrazit text "Loading"
+    // Reset and show "Loading" text
     loadingText.style.display = 'block'; 
-    loadingText.innerText = 'Loading';  // Nastavíme počáteční text
-    downloadLink.style.display = 'none';  // Skrytí tlačítka download, než je soubor připraven
-    errorText.innerText = '';  // Vyčistit předchozí chyby
+    loadingText.innerText = 'Loading';  // Set initial text
+    downloadLink.style.display = 'none';  // Hide download button until the file is ready
+    errorText.innerText = '';  // Clear previous errors
 
-    // Spustíme animaci teček
+    // Start loading animation
     let dotCount = 0;
     loadingInterval = setInterval(() => {
-        dotCount = (dotCount + 1) % 4;  // Udržujeme se mezi 0 a 3
-        loadingText.innerText = 'Loading' + '.'.repeat(dotCount);  // Přidáváme tečky
+        dotCount = (dotCount + 1) % 4;  // Keep between 0 and 3
+        loadingText.innerText = 'Loading' + '.'.repeat(dotCount);  // Add dots
     }, 500);
 
     const formData = new FormData(this);
 
     try {
-        // Pošleme požadavek na stahování souboru
+        // Send request to download file
         const response = await fetch('/download', {
             method: 'POST',
             body: formData
         });
 
-        clearInterval(loadingInterval);  // Zastavíme animaci
+        clearInterval(loadingInterval);  // Stop animation
 
         if (response.ok) {
             const responseData = await response.json();
             isDownloading = true;
 
-            // Jakmile je stahování dokončeno, zobrazí se tlačítko pro stažení souboru
-            loadingText.innerText = 'Download complete!';  // Změníme text
-            downloadLink.style.display = 'block';  // Zobrazíme tlačítko
-            downloadAnchor.href = `/downloads/${responseData.output_file}`;  // Nastavíme správnou cestu k souboru
-            downloadAnchor.download = responseData.output_file;  // Nastavíme název souboru ke stažení
+            // Once the download is complete, show the download button
+            loadingText.innerText = 'Download complete!';  // Change text
+            downloadLink.style.display = 'block';  // Show button
+            downloadAnchor.href = `/downloads/${responseData.output_file}`;  // Set correct file path
+            downloadAnchor.download = responseData.output_file;  // Set download file name
         } else {
             const errorData = await response.json();
-            errorText.innerText = errorData.error || 'An error occurred during download.';  // Zobrazit chybu
-            loadingText.style.display = 'none';  // Skryjeme text "Loading"
+            errorText.innerText = errorData.error || 'An error occurred during download.';  // Show error
+            loadingText.style.display = 'none';  // Hide "Loading" text
         }
     } catch (error) {
-        errorText.innerText = 'An error occurred: ' + error.message;  // Zobrazit chybu
-        loadingText.style.display = 'none';  // Skryjeme text "Loading"
+        clearInterval(loadingInterval);  // Ensure the loading animation is stopped in case of an error
+        errorText.innerText = 'An error occurred: ' + error.message;  // Show error
+        loadingText.style.display = 'none';  // Hide "Loading" text
     }
 });
+
+// Clean up on page unload
 window.addEventListener('beforeunload', async () => {
-    const response = await fetch('/delete', {
-        method: 'POST',
-    });
-    if (!response.ok) {
-        console.error('Failed to delete the file');
+    if (isDownloading) {
+        const response = await fetch('/delete', {
+            method: 'POST',
+        });
+        if (!response.ok) {
+            console.error('Failed to delete the file');
+        }
     }
 });
