@@ -3,6 +3,7 @@ import subprocess
 import os
 import threading
 import re
+import stat  # Import for setting folder permissions
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Set your secret key for cookie signing
@@ -12,6 +13,7 @@ output_file = ""  # Variable to store the downloaded file name
 DOWNLOAD_FOLDER = 'downloads'
 if not os.path.exists(DOWNLOAD_FOLDER):
     os.makedirs(DOWNLOAD_FOLDER)  # Create folder if it doesn't exist
+    os.chmod(DOWNLOAD_FOLDER, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)  # Set permissions to 777
 
 @app.route('/')
 def index():

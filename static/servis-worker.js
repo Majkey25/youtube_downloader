@@ -7,18 +7,18 @@ const urlsToCache = [
     '/static/logo/logo-512x512.png'
 ];
 
-// Instalace service workeru a přidání souborů do cache
+// Installation of the service worker and caching files
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(cache => {
-                console.log('Opened cache');
+                console.log('Opened cache and caching resources');
                 return cache.addAll(urlsToCache);
             })
     );
 });
 
-// Aktivace service workeru a vymazání starých cache
+// Activation of the service worker and clearing old caches
 self.addEventListener('activate', event => {
     const cacheWhitelist = [CACHE_NAME];
     event.waitUntil(
@@ -26,6 +26,7 @@ self.addEventListener('activate', event => {
             return Promise.all(
                 cacheNames.map(cacheName => {
                     if (!cacheWhitelist.includes(cacheName)) {
+                        console.log(`Deleting old cache: ${cacheName}`);
                         return caches.delete(cacheName);
                     }
                 })
@@ -34,11 +35,16 @@ self.addEventListener('activate', event => {
     );
 });
 
-// Interceptovat požadavky a servírovat je z cache
+// Intercept requests and serve them from the cache
 self.addEventListener('fetch', event => {
     event.respondWith(
         caches.match(event.request)
             .then(response => {
+                if (response) {
+                    console.log(`Serving from cache: ${event.request.url}`);
+                } else {
+                    console.log(`Fetching from network: ${event.request.url}`);
+                }
                 return response || fetch(event.request);
             })
     );
