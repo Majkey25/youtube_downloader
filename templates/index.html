@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube .mp3 Downloader</title>
+    <title>YouTube downloader</title>
     <link rel="stylesheet" href="/static/styles.css">
     <link rel="icon" href="/static/logo/logo-512x512.png" type="image/png">
     <link rel="manifest" href="/static/manifest.json">
 </head>
 <body>
-    <h1>YouTube MP3 Downloader</h1>
-    <p>Provide a YouTube link to download the MP3.</p>
+    <h1>YouTube downloader</h1>
+    <p>Provide a YouTube link to download files.</p>
 
     <form id="downloadForm" enctype="multipart/form-data">
         <div class="input-group">
@@ -25,13 +25,13 @@
     <div id="error"></div>
 
     <div id="downloadLink" style="display: none;"> <!-- Skrytí na začátku -->
-        <p>Download complete! Click the link below to download your .mp3:</p>
+        <p>Download complete! Click the links below to download:</p>
         <a id="downloadAnchor" href="" download>Download .mp3</a>
     </div>
     
-    <footer style="text-align: center; margin-top: 50px;">
+    <footer style="margin-top: 50px; text-align: center; font-size: 0.8em; color: #98FCFF;">
         <p>Made by Matěj Teplý</p>
-        <p>&copy; <span id="year"></span> All rights reserved.</p>
+        <p>&copy; <span id="year"></span>  All rights reserved.</p>
     </footer>
 
     <script src="/static/app.js"></script>

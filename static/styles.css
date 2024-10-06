@@ -6,10 +6,12 @@ body {
     color: #98FCFF; /* Light text color */
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    align-items: center; /* Center align children */
+    justify-content: center; /* Center vertically */
     min-height: 100vh; /* Full height */
+    text-align: center; /* Center text in body */
 }
+
 h1 {
     font-size: 4em; 
     margin-bottom: 20px;
@@ -23,17 +25,23 @@ p {
 .input-group {
     margin-bottom: 20px;
     max-width: 500px; /* Limit width for better aesthetics */
-    width: 100%; /* Full width */
+    width: 100%; /* Full width for the input group */
+    display: flex; /* Use flexbox for centering */
+    justify-content: center; /* Center children */
 }
 
 input[type="text"] {
-    width: 100%;
+    width: 100%; /* Make input take the full width of the container */
+    max-width: 400px; /* Set a max width to limit stretching */
     padding: 15px; /* Increased padding */
     border-radius: 25px; /* Rounded corners */
     border: 1px solid #dddddd;
     font-size: 1.2em; /* Bigger text */
     transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transition */
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    overflow: hidden; /* Hide overflow */
+    text-overflow: ellipsis; /* Show ellipsis for overflowing text */
+    white-space: nowrap; /* Prevent text wrapping */
 }
 
 input[type="text"]:focus {
@@ -56,8 +64,22 @@ button {
 }
 
 button:hover {
-    background-color: #4caf50 ;
+    background-color: #4caf50;
     transform: translateY(-2px); /* Slight lift effect */
+}
+
+.download-button {
+    background-color: green; /* Base color */
+    color: white; /* Text color */
+    border: none;
+    border-radius: 5px;
+    padding: 8px 12px; /* Smaller size */
+    cursor: pointer;
+    transition: background-color 0.3s ease; /* Smooth transition */
+}
+
+.download-button:hover {
+    background-color: lightgreen; /* Lighter color on hover */
 }
 
 #loadingText {
@@ -78,22 +100,24 @@ button:hover {
     margin-top: 20px;
     font-size: 1.2em; /* Font size for the download message */
     text-align: center; /* Center text */
-   }
+}
 
 #downloadLink a {
-    color: #ffffff; /* Green link color */
+    color: #ffffff; /* Link color */
     text-decoration: underline; /* Underline link */
     padding: 10px 20px;  /* Padding for the link */
-    background-color: #4CAF50;  /* Zelená barva */
-    border-radius: 5px;  /* Zaoblení rohů */
-    display: inline-block;  /* Umožňuje margin a padding */
-    font-size: 16px;  /* Velikost písma */
+    background-color: #4CAF50;  /* Green background */
+    border-radius: 5px;  /* Rounded corners */
+    display: inline-block;  /* Allows margin and padding */
+    font-size: 16px;  /* Font size */
+    margin: 10px auto; /* Center the link */
 }
 
 #downloadLink a:hover {
-    background-color: #03b809;  /* Tmavší zelená při najetí */
+    background-color: #03b809;  /* Darker green on hover */
     text-decoration: none; /* Remove underline on hover */
 }
+
 footer {
     display: flex; /* Enables flexbox for the footer */
     justify-content: center; /* Centers the footer contents horizontally */
@@ -101,4 +125,5 @@ footer {
     margin-top: auto; /* Pushes the footer to the bottom */
     padding: 20px 0; /* Adds some space above and below the text */
     gap: 20px;
+    width: 100%; /* Ensure footer takes full width */
 }
