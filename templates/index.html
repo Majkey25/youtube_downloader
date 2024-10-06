@@ -24,14 +24,17 @@
     <div id="loadingText" style="display: none;">Loading</div>
     <div id="error"></div>
 
-    <div id="downloadLink" style="display: none;"> <!-- Skrytí na začátku -->
-        <p>Download complete! Click the links below to download:</p>
-        <a id="downloadAnchor" href="" download>Download .mp3</a>
+    <div id="downloadLink" style="display: none;"> <!-- Hidden initially -->
+        <p>Click the links below to download the files:</p>
+        <div class="button-container">
+        <a id="downloadMp3Anchor" class="download-button" href="" download>Download .mp3 (sound)</a>
+        <a id="downloadWebmpAnchor" class="download-button" href="" download>Download .mp4 (video & sound)</a>
+        </div>
     </div>
     
     <footer style="margin-top: 50px; text-align: center; font-size: 0.8em; color: #98FCFF;">
         <p>Made by Matěj Teplý</p>
-        <p>&copy; <span id="year"></span>  All rights reserved.</p>
+        <p>&copy; <span id="year"></span> All rights reserved.</p>
     </footer>
 
     <script src="/static/app.js"></script>
