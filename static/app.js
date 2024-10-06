@@ -6,52 +6,76 @@ document.getElementById('downloadForm').addEventListener('submit', async functio
 
     const loadingText = document.getElementById('loadingText');
     const downloadLink = document.getElementById('downloadLink');
-    const downloadAnchor = document.getElementById('downloadAnchor');
-    const errorText = document.getElementById('error');  // Pro chybové zprávy
+    const downloadMp3Anchor = document.getElementById('downloadMp3Anchor'); 
+    const downloadMp4Anchor = document.getElementById('downloadWebmpAnchor');  // Change to downloadMp4Anchor
+    const errorText = document.getElementById('error');  
 
-    // Reset a zobrazit text "Loading"
+    // Reset and show loading text
     loadingText.style.display = 'block'; 
-    loadingText.innerText = 'Loading';  // Nastavíme počáteční text
-    downloadLink.style.display = 'none';  // Skrytí tlačítka download, než je soubor připraven
-    errorText.innerText = '';  // Vyčistit předchozí chyby
+    loadingText.innerText = 'Loading';  
+    downloadLink.style.display = 'none';  
+    errorText.innerText = '';  
 
-    // Spustíme animaci teček
     let dotCount = 0;
     loadingInterval = setInterval(() => {
-        dotCount = (dotCount + 1) % 4;  // Udržujeme se mezi 0 a 3
-        loadingText.innerText = 'Loading' + '.'.repeat(dotCount);  // Přidáváme tečky
+        dotCount = (dotCount + 1) % 4;  
+        loadingText.innerText = 'Loading' + '.'.repeat(dotCount);  
     }, 500);
 
     const formData = new FormData(this);
+    
+    // Log individual form data entries
+    for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+    }
 
     try {
-        // Pošleme požadavek na stahování souboru
         const response = await fetch('/download', {
             method: 'POST',
             body: formData
         });
 
-        clearInterval(loadingInterval);  // Zastavíme animaci
+        console.log('Response:', response);  // Log the entire response object
+        console.log('Response Status:', response.status); // Log response status
+        clearInterval(loadingInterval);
 
         if (response.ok) {
             const responseData = await response.json();
+            console.log('Response Data:', responseData);  // Log parsed response data
             isDownloading = true;
 
-            // Jakmile je stahování dokončeno, zobrazí se tlačítko pro stažení souboru
-            loadingText.innerText = 'Download complete!';  // Změníme text
-            downloadLink.style.display = 'block';  // Zobrazíme tlačítko
-            downloadAnchor.href = `/downloads/${responseData.output_file}`;  // Nastavíme správnou cestu k souboru
-            downloadAnchor.download = responseData.output_file;  // Nastavíme název souboru ke stažení
+            loadingText.innerText = 'Download complete!';  
+            downloadLink.style.display = 'block';  
+
+            // Check if anchors exist before setting href
+            if (responseData.files && downloadMp3Anchor && downloadMp4Anchor) { // Change here
+                const mp3File = responseData.files.mp3_file;
+                const mp4File = responseData.files.mp4_file;  // Change here
+
+                console.log('MP3 File:', mp3File);  // Log MP3 file name
+                console.log('MP4 File:', mp4File);  // Log MP4 file name
+
+                downloadMp3Anchor.href = `/downloads/${mp3File}`;  
+                downloadMp3Anchor.download = mp3File;  
+                downloadMp4Anchor.href = `/downloads/${mp4File}`;  // Change here
+                downloadMp4Anchor.download = mp4File;  // Change here
+                downloadMp3Anchor.style.display = 'block'; // Show the MP3 link
+                downloadMp4Anchor.style.display = 'block'; // Show the MP4 link
+            } else {
+                errorText.innerText = 'Download links are not available.'; // Display error if anchors are not found
+            }
         } else {
             const errorData = await response.json();
-            errorText.innerText = errorData.error || 'An error occurred during download.';  // Zobrazit chybu
-            loadingText.style.display = 'none';  // Skryjeme text "Loading"
+            errorText.innerText = errorData.error || 'An error occurred during download.';  
+            loadingText.style.display = 'none';  
         }
     } catch (error) {
-        errorText.innerText = 'An error occurred: ' + error.message;  // Zobrazit chybu
-        loadingText.style.display = 'none';  // Skryjeme text "Loading"
+        console.error('Fetch Error:', error);  // Log any errors during fetch
+        errorText.innerText = 'An error occurred: ' + error.message;  
+        loadingText.style.display = 'none';  
     }
 });
+
 window.addEventListener('beforeunload', async () => {
     const response = await fetch('/delete', {
         method: 'POST',

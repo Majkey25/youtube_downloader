@@ -50,6 +50,11 @@ input[type="text"]:focus {
     outline: none; /* Remove default outline */
 }
 
+.button-container {
+    display: flex;
+    gap: 5px; /* Adjust the space between buttons */
+}
+
 button {
     padding: 15px 25px; /* Bigger button */
     border: none;
