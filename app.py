@@ -5,6 +5,8 @@ import threading
 import re
 import signal
 import sys
+import random
+import time
 
 app = Flask(__name__, static_folder='static')
 app.secret_key = 'your_secret_key'
@@ -50,6 +52,9 @@ def download():
         output_mp4_file = f"{title}.mp4"  
         output_mp3_path = os.path.join(DOWNLOAD_FOLDER, output_file)
         output_mp4_path = os.path.join(DOWNLOAD_FOLDER, output_mp4_file)
+
+        # Adding random delay to prevent triggering YouTube rate-limits
+        time.sleep(random.uniform(1, 3))
 
         # Prepare the yt-dlp command to download and convert to MP3
         cmd_mp3 = ['yt-dlp', '-x', '--audio-format', 'mp3', '-o', output_mp3_path, youtube_link]
