@@ -1,13 +1,13 @@
-let isDownloading = false;
-let loadingInterval;
+let isDownloading = false;  
+let loadingInterval;  
 
 document.getElementById('downloadForm').addEventListener('submit', async function(event) {
-    event.preventDefault();
+    event.preventDefault();  
 
     const loadingText = document.getElementById('loadingText');
     const downloadLink = document.getElementById('downloadLink');
     const downloadMp3Anchor = document.getElementById('downloadMp3Anchor'); 
-    const downloadMp4Anchor = document.getElementById('downloadWebmpAnchor');  // Change to downloadMp4Anchor
+    const downloadMp4Anchor = document.getElementById('downloadMp4Anchor');  
     const errorText = document.getElementById('error');  
 
     // Reset and show loading text
@@ -22,12 +22,7 @@ document.getElementById('downloadForm').addEventListener('submit', async functio
         loadingText.innerText = 'Loading' + '.'.repeat(dotCount);  
     }, 500);
 
-    const formData = new FormData(this);
-    
-    // Log individual form data entries
-    for (let [key, value] of formData.entries()) {
-        console.log(key, value);
-    }
+    const formData = new FormData(this);  
 
     try {
         const response = await fetch('/download', {
@@ -35,52 +30,57 @@ document.getElementById('downloadForm').addEventListener('submit', async functio
             body: formData
         });
 
-        console.log('Response:', response);  // Log the entire response object
-        console.log('Response Status:', response.status); // Log response status
-        clearInterval(loadingInterval);
+        clearInterval(loadingInterval);  
 
         if (response.ok) {
             const responseData = await response.json();
-            console.log('Response Data:', responseData);  // Log parsed response data
-            isDownloading = true;
+            isDownloading = true;  
 
             loadingText.innerText = 'Download complete!';  
             downloadLink.style.display = 'block';  
 
-            // Check if anchors exist before setting href
-            if (responseData.files && downloadMp3Anchor && downloadMp4Anchor) { // Change here
+            if (responseData.files && downloadMp3Anchor && downloadMp4Anchor) {
                 const mp3File = responseData.files.mp3_file;
-                const mp4File = responseData.files.mp4_file;  // Change here
-
-                console.log('MP3 File:', mp3File);  // Log MP3 file name
-                console.log('MP4 File:', mp4File);  // Log MP4 file name
-
+                const mp4File = responseData.files.mp4_file;  
+            
+                // Verify if the file is correctly set
+                console.log(`MP3 File: ${mp3File}`);
+                console.log(`MP4 File: ${mp4File}`);
+            
                 downloadMp3Anchor.href = `/downloads/${mp3File}`;  
                 downloadMp3Anchor.download = mp3File;  
-                downloadMp4Anchor.href = `/downloads/${mp4File}`;  // Change here
-                downloadMp4Anchor.download = mp4File;  // Change here
-                downloadMp3Anchor.style.display = 'block'; // Show the MP3 link
-                downloadMp4Anchor.style.display = 'block'; // Show the MP4 link
+                downloadMp4Anchor.href = `/downloads/${mp4File}`;  
+                downloadMp4Anchor.download = mp4File;  
+                downloadMp3Anchor.style.display = 'block'; 
+                downloadMp4Anchor.style.display = 'block'; 
             } else {
-                errorText.innerText = 'Download links are not available.'; // Display error if anchors are not found
+                errorText.innerText = 'Download links are not available.'; 
+                loadingText.style.display = 'none'; 
             }
+            
         } else {
             const errorData = await response.json();
             errorText.innerText = errorData.error || 'An error occurred during download.';  
             loadingText.style.display = 'none';  
         }
     } catch (error) {
-        console.error('Fetch Error:', error);  // Log any errors during fetch
+        console.error('Fetch Error:', error);  
         errorText.innerText = 'An error occurred: ' + error.message;  
         loadingText.style.display = 'none';  
+    } finally {
+        isDownloading = false;  
     }
 });
 
-window.addEventListener('beforeunload', async () => {
-    const response = await fetch('/delete', {
+// Cleanup on page unload
+window.addEventListener('beforeunload', async (event) => {
+    if (isDownloading) {  
+        const confirmationMessage = "You have a download in progress. Are you sure you want to leave?";
+        event.returnValue = confirmationMessage; 
+    }
+
+    // Call the delete endpoint to remove files on server
+    await fetch('/delete', {
         method: 'POST',
     });
-    if (!response.ok) {
-        console.error('Failed to delete the file');
-    }
 });
