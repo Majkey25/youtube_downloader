@@ -6,11 +6,14 @@ import time
 import re
 import sys
 import signal
+import logging
 
 app = Flask(__name__, static_folder='static')
 app.secret_key = 'your_secret_key'
 output_file = ""
 output_mp4_file = ""
+
+logging.basicConfig(level=logging.INFO)
 
 # Set the path for saving downloaded files on the server
 DOWNLOAD_FOLDER = 'downloads'
@@ -164,4 +167,4 @@ def leave():
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
-    app.run(host="0.0.0.0", port=8080)
+    app.run(host="0.0.0.0", port=8080, debug=True)
