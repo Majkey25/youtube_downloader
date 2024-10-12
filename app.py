@@ -17,8 +17,11 @@ logging.basicConfig(level=logging.INFO)
 
 # Set the path for saving downloaded files on the server
 DOWNLOAD_FOLDER = 'downloads'
+
+# Check if the downloads folder exists, create it if it doesn't
 if not os.path.exists(DOWNLOAD_FOLDER):
     os.makedirs(DOWNLOAD_FOLDER)
+    os.chmod(DOWNLOAD_FOLDER, 0o755)  # Set permissions to 755
 
 @app.route('/')
 def index():
@@ -167,4 +170,4 @@ def leave():
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
-    app.run(host="0.0.0.0", port=8080, debug=True)
+    app.run(host="0.0.0.0", port=8080)
