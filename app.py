@@ -59,39 +59,46 @@ def download():
         # Prepare the yt-dlp command to download and convert to MP3
         cmd_mp3 = ['yt-dlp', '-x', '--audio-format', 'mp3', '-o', output_mp3_path, youtube_link]
 
-        try:
-            # Run the command for mp3
-            process_mp3 = subprocess.Popen(cmd_mp3, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            stdout_mp3, stderr_mp3 = process_mp3.communicate()
+        retry_count = 3
+        for attempt in range(retry_count):
+            try:
+                # Run the command for mp3
+                process_mp3 = subprocess.Popen(cmd_mp3, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                stdout_mp3, stderr_mp3 = process_mp3.communicate()
 
-            print("STDOUT MP3:", stdout_mp3)
-            print("STDERR MP3:", stderr_mp3)
+                print("STDOUT MP3:", stdout_mp3)
+                print("STDERR MP3:", stderr_mp3)
 
-            if process_mp3.returncode == 0 and os.path.exists(output_mp3_path):
-                print(f"Downloaded MP3 file: {output_mp3_path}")
+                if process_mp3.returncode == 0 and os.path.exists(output_mp3_path):
+                    print(f"Downloaded MP3 file: {output_mp3_path}")
 
-                # Run command for MP4
-                cmd_mp4 = ['yt-dlp', '-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]', '-o', output_mp4_path, youtube_link]
-                process_mp4 = subprocess.Popen(cmd_mp4, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-                stdout_mp4, stderr_mp4 = process_mp4.communicate()
+                    # Run command for MP4
+                    cmd_mp4 = ['yt-dlp', '-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]', '-o', output_mp4_path, youtube_link]
+                    process_mp4 = subprocess.Popen(cmd_mp4, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                    stdout_mp4, stderr_mp4 = process_mp4.communicate()
 
-                print("STDOUT MP4:", stdout_mp4)
-                print("STDERR MP4:", stderr_mp4)
+                    print("STDOUT MP4:", stdout_mp4)
+                    print("STDERR MP4:", stderr_mp4)
 
-                if process_mp4.returncode == 0 and os.path.exists(output_mp4_path):
-                    print(f"Downloaded MP4 file: {output_mp4_path}")
+                    if process_mp4.returncode == 0 and os.path.exists(output_mp4_path):
+                        print(f"Downloaded MP4 file: {output_mp4_path}")
+                    else:
+                        print(f"Error downloading MP4: {stderr_mp4}")
+                        output_mp4_file = ""  # Clear the mp4 filename on error
                 else:
-                    print(f"Error downloading MP4: {stderr_mp4}")
+                    print(f"Error downloading MP3: {stderr_mp3}")
+                    output_file = ""  # Clear the filename on error
                     output_mp4_file = ""  # Clear the mp4 filename on error
-            else:
-                print(f"Error downloading MP3: {stderr_mp3}")
-                output_file = ""  # Clear the filename on error
-                output_mp4_file = ""  # Clear the mp4 filename on error
 
-        except Exception as e:
-            print(f"An error occurred: {str(e)}")
-            output_file = ""  # Clear the filename on error
-            output_mp4_file = ""  # Clear the mp4 filename on error
+                break  # Exit the retry loop if successful
+
+            except Exception as e:
+                print(f"An error occurred: {str(e)}")
+                time.sleep(2 ** attempt)  # Exponential backoff on error
+        else:
+            print("Max retries reached, download failed.")
+            output_file = ""
+            output_mp4_file = ""
 
     download_thread = threading.Thread(target=run_download)
     download_thread.start()
