@@ -7,12 +7,15 @@ import re
 import sys
 import signal
 import logging
+import shutil
 
 app = Flask(__name__, static_folder='static')
 app.secret_key = 'your_secret_key'
 output_file = ""
 output_mp4_file = ""
 
+total, used, free = shutil.disk_usage("/")
+logging.info(f"Disk usage: total={total}, used={used}, free={free}")
 logging.basicConfig(level=logging.INFO)
 
 # Set the path for saving downloaded files on the server
@@ -21,7 +24,7 @@ DOWNLOAD_FOLDER = 'downloads'
 # Check if the downloads folder exists, create it if it doesn't
 if not os.path.exists(DOWNLOAD_FOLDER):
     os.makedirs(DOWNLOAD_FOLDER)
-    os.chmod(DOWNLOAD_FOLDER, 0o755)  # Set permissions to 755
+    os.chmod(DOWNLOAD_FOLDER, 0o775)  # Set permissions to 775 to allow group write access
 
 @app.route('/')
 def index():
