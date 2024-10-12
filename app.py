@@ -1,12 +1,11 @@
 from flask import Flask, request, jsonify, render_template, send_from_directory, make_response
 import subprocess
 import os
-import threading
-import re
-import signal
-import sys
 import random
 import time
+import re
+import sys
+import signal
 
 app = Flask(__name__, static_folder='static')
 app.secret_key = 'your_secret_key'
@@ -31,85 +30,60 @@ def download():
     global output_file, output_mp4_file
     youtube_link = request.form['youtubeLink']
 
-    def run_download():
-        global output_file, output_mp4_file
+    # Validate YouTube link format
+    if not (('v=' in youtube_link) or ('youtu.be/' in youtube_link)):
+        return jsonify({'error': 'Invalid YouTube link.'}), 400
 
-        # Get a valid filename from the YouTube link
-        video_id = None
-        
-        if 'v=' in youtube_link:
-            video_id = youtube_link.split('v=')[1].split('&')[0]
-        elif 'youtu.be/' in youtube_link:
-            video_id = youtube_link.split('youtu.be/')[1]
-        else:
-            output_file = ""
-            output_mp4_file = ""
-            print("Invalid YouTube link.")
-            return
+    # Extract video ID
+    video_id = None
+    if 'v=' in youtube_link:
+        video_id = youtube_link.split('v=')[1].split('&')[0]
+    elif 'youtu.be/' in youtube_link:
+        video_id = youtube_link.split('youtu.be/')[1]
 
-        title = re.sub(r'[<>:"/\\|?*]', '', video_id)
-        output_file = f"{title}.mp3"
-        output_mp4_file = f"{title}.mp4"  
-        output_mp3_path = os.path.join(DOWNLOAD_FOLDER, output_file)
-        output_mp4_path = os.path.join(DOWNLOAD_FOLDER, output_mp4_file)
+    title = re.sub(r'[<>:"/\\|?*]', '', video_id)
+    output_file = f"{title}.mp3"
+    output_mp4_file = f"{title}.mp4"
+    output_mp3_path = os.path.join(DOWNLOAD_FOLDER, output_file)
+    output_mp4_path = os.path.join(DOWNLOAD_FOLDER, output_mp4_file)
 
-        # Adding random delay to prevent triggering YouTube rate-limits
-        time.sleep(random.uniform(1, 3))
+    # Adding random delay to prevent triggering YouTube rate-limits
+    time.sleep(random.uniform(1, 3))
 
-        # Prepare the yt-dlp command to download and convert to MP3
-        cmd_mp3 = ['yt-dlp', '-x', '--audio-format', 'mp3', '-o', output_mp3_path, youtube_link]
+    # Prepare the yt-dlp command to download and convert to MP3
+    cmd_mp3 = ['yt-dlp', '-x', '--audio-format', 'mp3', '-o', output_mp3_path, youtube_link]
 
-        try:
-            # Run the command for mp3
-            process_mp3 = subprocess.Popen(cmd_mp3, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            stdout_mp3, stderr_mp3 = process_mp3.communicate()
+    # Using subprocess to download files
+    try:
+        # Run the command for mp3
+        process_mp3 = subprocess.run(cmd_mp3, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-            print("STDOUT MP3:", stdout_mp3)
-            print("STDERR MP3:", stderr_mp3)
+        if process_mp3.returncode == 0 and os.path.exists(output_mp3_path):
+            # Run command for MP4
+            cmd_mp4 = ['yt-dlp', '-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]', '-o', output_mp4_path, youtube_link]
+            process_mp4 = subprocess.run(cmd_mp4, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-            if process_mp3.returncode == 0 and os.path.exists(output_mp3_path):
-                print(f"Downloaded MP3 file: {output_mp3_path}")
-
-                # Run command for MP4
-                cmd_mp4 = ['yt-dlp', '-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]', '-o', output_mp4_path, youtube_link]
-                process_mp4 = subprocess.Popen(cmd_mp4, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-                stdout_mp4, stderr_mp4 = process_mp4.communicate()
-
-                print("STDOUT MP4:", stdout_mp4)
-                print("STDERR MP4:", stderr_mp4)
-
-                if process_mp4.returncode == 0 and os.path.exists(output_mp4_path):
-                    print(f"Downloaded MP4 file: {output_mp4_path}")
-                else:
-                    print(f"Error downloading MP4: {stderr_mp4}")
-                    output_mp4_file = ""  # Clear the mp4 filename on error
+            if process_mp4.returncode == 0 and os.path.exists(output_mp4_path):
+                response_data = {
+                    'status': 'Download complete',
+                    'files': {
+                        'mp3_file': output_file,
+                        'mp4_file': output_mp4_file
+                    }
+                }
+                response = make_response(jsonify(response_data))
+                response.set_cookie('downloaded_file', output_file)
+                return response
             else:
-                print(f"Error downloading MP3: {stderr_mp3}")
-                output_file = ""  # Clear the filename on error
                 output_mp4_file = ""  # Clear the mp4 filename on error
-
-        except Exception as e:
-            print(f"An error occurred: {str(e)}")
+        else:
             output_file = ""  # Clear the filename on error
             output_mp4_file = ""  # Clear the mp4 filename on error
 
-    download_thread = threading.Thread(target=run_download)
-    download_thread.start()
-    download_thread.join()
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-    response_data = {}
-    if output_file and os.path.exists(os.path.join(DOWNLOAD_FOLDER, output_file)):
-        response_data['mp3_file'] = output_file
-    if output_mp4_file and os.path.exists(os.path.join(DOWNLOAD_FOLDER, output_mp4_file)):
-        response_data['mp4_file'] = output_mp4_file
-
-    if response_data:
-        response = make_response(jsonify({'status': 'Download complete', 'files': response_data}))
-        response.set_cookie('downloaded_file', output_file)
-        return response
-    else:
-        print(f"Output file: {output_file}, MP4 file: {output_mp4_file}")
-        return jsonify({'error': 'Failed to download file or download links are not available.'}), 500
+    return jsonify({'error': 'Failed to download file or download links are not available.'}), 500
 
 @app.route('/downloads/<filename>')
 def download_file(filename):
@@ -139,6 +113,7 @@ def delete_file():
             os.remove(mp4_path)
             files_deleted.append(output_mp4_file)
 
+    # Reset global file variables
     output_file = ""
     output_mp4_file = ""
     
@@ -173,6 +148,19 @@ def signal_handler(sig, frame):
     print("Shutting down server and cleaning up downloads...")
     cleanup_downloads()
     sys.exit(0)
+
+@app.before_request
+def before_request():
+    pass
+
+@app.after_request
+def after_request(response):
+    return response
+
+# JavaScript code to handle leaving the page and deleting files
+@app.route('/leave', methods=['POST'])
+def leave():
+    return delete_file()
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
