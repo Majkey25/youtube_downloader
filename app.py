@@ -133,13 +133,13 @@ def check_cookie():
 def delete_file():
     global output_file, output_mp4_file
     files_deleted = []
-    
+
     if output_file:
         file_path = os.path.join(DOWNLOAD_FOLDER, output_file)
         if os.path.exists(file_path):
             os.remove(file_path)
             files_deleted.append(output_file)
-    
+
     if output_mp4_file:
         mp4_path = os.path.join(DOWNLOAD_FOLDER, output_mp4_file)
         if os.path.exists(mp4_path):
@@ -148,11 +148,12 @@ def delete_file():
 
     output_file = ""
     output_mp4_file = ""
-    
+
     if files_deleted:
         return jsonify({'status': 'Files deleted successfully', 'files': files_deleted})
-    
+
     return jsonify({'error': 'No files to delete or files not found'}), 404
+
 
 @app.route('/delete_cookie', methods=['POST'])
 def delete_cookie():
