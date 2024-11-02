@@ -54,7 +54,7 @@ def download():
         output_mp4_path = os.path.join(DOWNLOAD_FOLDER, output_mp4_file)
 
         # Adding random delay to prevent triggering YouTube rate-limits
-        time.sleep(random.uniform(3, 5))  # Increased delay
+        time.sleep(random.uniform(5, 15))  # Increased delay
 
         # Prepare the yt-dlp command to download and convert to MP3
         cmd_mp3 = [
@@ -99,6 +99,9 @@ def download():
                         print(f"Error downloading MP4: {stderr_mp4}")
                         output_mp4_file = ""  # Clear the mp4 filename on error
                 else:
+                    if "HTTP Error 429" in stderr_mp3 or "HTTP Error 400" in stderr_mp3:
+                        print("Hit rate limit or bad request, sleeping for a longer duration...")
+                        time.sleep(60)  # Wait longer before retrying
                     print(f"Error downloading MP3: {stderr_mp3}")
                     output_file = ""  # Clear the filename on error
                     output_mp4_file = ""  # Clear the mp4 filename on error
@@ -166,7 +169,6 @@ def delete_file():
         return jsonify({'status': 'Files deleted successfully', 'files': files_deleted})
 
     return jsonify({'error': 'No files to delete or files not found'}), 404
-
 
 @app.route('/delete_cookie', methods=['POST'])
 def delete_cookie():
