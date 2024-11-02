@@ -54,10 +54,17 @@ def download():
         output_mp4_path = os.path.join(DOWNLOAD_FOLDER, output_mp4_file)
 
         # Adding random delay to prevent triggering YouTube rate-limits
-        time.sleep(random.uniform(1, 3))
+        time.sleep(random.uniform(3, 5))  # Increased delay
 
         # Prepare the yt-dlp command to download and convert to MP3
-        cmd_mp3 = ['yt-dlp', '-x', '--audio-format', 'mp3', '-o', output_mp3_path, youtube_link]
+        cmd_mp3 = [
+            'yt-dlp', 
+            '-x', 
+            '--audio-format', 'mp3', 
+            '-o', output_mp3_path, 
+            '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36', 
+            youtube_link
+        ]
 
         retry_count = 3
         for attempt in range(retry_count):
@@ -73,7 +80,13 @@ def download():
                     print(f"Downloaded MP3 file: {output_mp3_path}")
 
                     # Run command for MP4
-                    cmd_mp4 = ['yt-dlp', '-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]', '-o', output_mp4_path, youtube_link]
+                    cmd_mp4 = [
+                        'yt-dlp', 
+                        '-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]', 
+                        '-o', output_mp4_path, 
+                        '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36', 
+                        youtube_link
+                    ]
                     process_mp4 = subprocess.Popen(cmd_mp4, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
                     stdout_mp4, stderr_mp4 = process_mp4.communicate()
 
