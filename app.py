@@ -14,7 +14,10 @@ output_file = ""
 output_mp4_file = ""
 
 # Set the path for saving downloaded files on the server
-DOWNLOAD_FOLDER = 'downloads'
+base_dir = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.dirname(os.path.abspath(__file__))
+DOWNLOAD_FOLDER = os.path.join(base_dir, 'downloads')
+
+# Ensure the directory exists
 if not os.path.exists(DOWNLOAD_FOLDER):
     os.makedirs(DOWNLOAD_FOLDER)
 
