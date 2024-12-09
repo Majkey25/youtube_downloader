@@ -62,7 +62,6 @@ def download():
             '-x', 
             '--audio-format', 'mp3', 
             '-o', output_mp3_path, 
-            '--cookies', 'cookies.txt',  # Path to your cookies.txt
             '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36', 
             youtube_link
         ]
@@ -85,7 +84,6 @@ def download():
                         'yt-dlp', 
                         '-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]', 
                         '-o', output_mp4_path, 
-                        '--cookies', 'cookies.txt',  # Path to your cookies.txt
                         '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36', 
                         youtube_link
                     ]
