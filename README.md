@@ -4,7 +4,7 @@ Fast MP3/MP4 downloads powered by `yt-dlp`, Flask, and a minimal glassy UI ready
 
 ## Features
 - Clean, responsive landing page with subtle glow animations.
-- High‑quality MP3 + MP4 downloads via `yt-dlp` (runs on the backend).
+- High-quality MP3 + MP4 downloads via `yt-dlp` (runs on the backend).
 - Config-driven: all tunables live in `config.py` and can be overridden with environment variables.
 - PWA support (manifest + service worker) with cache-friendly relative paths.
 - GitHub Actions workflow to ship the static site to GitHub Pages.
@@ -57,3 +57,6 @@ Manual run:
   under the `/<repo>` GitHub Pages prefix.
 - Downloads are cleaned up via the `/delete` endpoint on page unload; you can also POST to `/delete`
   to purge the last files.
+
+## License
+This project is licensed under the MIT License. See `LICENSE` for details.
