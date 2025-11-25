@@ -111,7 +111,13 @@ form.addEventListener('submit', async (event) => {
             body: formData,
         });
 
-        const payload = await response.json();
+        let payload;
+        try {
+            payload = await response.json();
+        } catch (e) {
+            throw new Error('Server returned an unexpected response. Please try again.');
+        }
+
         if (!response.ok) {
             throw new Error(payload.error || 'Download failed. Please retry.');
         }
