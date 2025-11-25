@@ -1,13 +1,15 @@
 // Define the cache name
-const CACHE_NAME = 'yt-mp3-downloader-v1';
+const CACHE_NAME = 'yt-downloader-v2';
 
 // Specify the files to cache
 const urlsToCache = [
-    '/',
-    '/static/styles.css',
-    '/static/app.js',
-    '/static/logo/logo-192x192.png',
-    '/static/logo/logo-512x512.png',
+    './',
+    'service-worker.js',
+    'static/styles.css',
+    'static/app.js',
+    'static/config.js',
+    'static/logo/logo-192x192.png',
+    'static/logo/logo-512x512.png',
 ];
 // Installation of the service worker and caching files
 self.addEventListener('install', event => {

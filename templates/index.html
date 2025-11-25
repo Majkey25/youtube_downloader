@@ -4,58 +4,70 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YouTube Downloader</title>
-    <link rel="stylesheet" href="/static/styles.css">
-    <link rel="icon" href="/static/logo/logo-512x512.png" type="image/png">
-    <link rel="manifest" href="/static/manifest.json">
+    <meta name="description" content="Download YouTube audio or video in one click.">
+    <link rel="stylesheet" href="static/styles.css">
+    <link rel="icon" href="static/logo/logo-512x512.png" type="image/png">
+    <link rel="manifest" href="static/manifest.json">
 </head>
 <body>
-    <h1>YouTube Downloader</h1>
-    <p>Provide a YouTube link to download files.</p>
+    <div class="bg-glow bg-glow-one"></div>
+    <div class="bg-glow bg-glow-two"></div>
+    <div class="grid-overlay"></div>
 
-    <form id="downloadForm" enctype="multipart/form-data">
-        <div class="input-group">
-            <input type="text" id="youtubeLink" name="youtubeLink" placeholder="Enter YouTube link" required>
-        </div>
-        <div>
-            <button type="submit">Download</button>
-        </div>
-    </form>
+    <main class="page">
+        <header class="hero">
+            <div class="pill">MP3 · MP4</div>
+            <h1>Save any YouTube audio or video</h1>
+            <p class="lede">
+                Paste the link, we deliver high-quality downloads with clear progress feedback.
+            </p>
+        </header>
 
-    <div id="loadingText" style="display: none;">Loading</div>
-    <div id="error"></div>
+        <section class="card">
+            <form id="downloadForm" enctype="multipart/form-data" class="form">
+                <label for="youtubeLink">YouTube link</label>
+                <div class="input-row">
+                    <input type="url" id="youtubeLink" name="youtubeLink"
+                           placeholder="https://www.youtube.com/watch?v=..."
+                           required autocomplete="off">
+                    <button type="submit" class="primary">Start download</button>
+                </div>
+                <p class="hint">Highest quality available. Large videos can take a few minutes.</p>
+            </form>
 
-    <div id="downloadLink" style="display: none;">
-        <p>Click the links below to download the files:</p>
-        <div class="button-container">
-            <a id="downloadMp3Anchor" class="download-button" href="" download>Download .mp3 (sound)</a>
-            <a id="downloadMp4Anchor" class="download-button" href="" download>Download .mp4 (video & sound)</a>
-        </div>
-    </div>
+            <div id="loadingText" class="status hidden">
+                <span class="spinner"></span>
+                <span id="loadingCopy">Preparing your download</span>
+            </div>
 
-    <p style="text-align: center; margin: 0; font-size: smaller; position: absolute; bottom: 0; width: 100%;">The whole process might take up to 5 minutes because it is downloaded in the highest possible quality.</p>
-    
-    <footer style="display: flex; justify-content: center; align-items: center; text-align: center;">
-        <a href="https://majkey25.github.io/Majkey25/" style="text-decoration: none; color: inherit;">
-            <p style="margin: 1;">Made by Matěj Teplý &copy; <span id="year"></span> All rights reserved.</p>
-        </a>
-    </footer>
+            <div id="error" class="error hidden"></div>
 
-    <script src="/static/app.js"></script>
+            <div id="downloadLink" class="download-area hidden">
+                <p class="status-title">Ready. Choose your format:</p>
+                <div class="download-actions">
+                    <a id="downloadMp3Anchor" class="chip" href="" download>Download MP3</a>
+                    <a id="downloadMp4Anchor" class="chip" href="" download>Download MP4</a>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <a href="https://majkey25.github.io/Majkey25/" class="footer-link">
+                Made by Matej Teply · <span id="year"></span>
+            </a>
+        </footer>
+    </main>
+
+    <script src="static/config.js"></script>
+    <script src="static/app.js"></script>
     <script>
-        // Service Worker registration
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/static/service-worker.js')
-                    .then(registration => {
-                        console.log('ServiceWorker registered:', registration);
-                    }).catch(error => {
-                        console.log('ServiceWorker registration failed:', error);
-                    });
+                navigator.serviceWorker.register('service-worker.js', { scope: './' })
+                    .catch(() => {});
             });
         }
-        
-        // Set the current year
-        document.getElementById("year").textContent = new Date().getFullYear();
+        document.getElementById('year').textContent = new Date().getFullYear();
     </script>
 </body>
 </html>
