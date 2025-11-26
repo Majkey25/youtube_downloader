@@ -6,7 +6,6 @@ const errorBox = document.getElementById('error');
 const downloadArea = document.getElementById('downloadLink');
 const downloadMp3Anchor = document.getElementById('downloadMp3Anchor');
 const downloadMp4Anchor = document.getElementById('downloadMp4Anchor');
-const useTemplateButton = document.getElementById('useTemplateButton');
 
 const config = window.APP_CONFIG || {
     apiBaseUrl: '__API_BASE_URL__',
@@ -114,12 +113,12 @@ const showDownloads = (files) => {
     setHidden(downloadArea, false);
 };
 
-const typeTemplateLink = (autoSubmit, forceRestart = false) => {
+const typeTemplateLink = (autoSubmit) => {
     if (!linkInput) {
         return;
     }
     const alreadyFilled = linkInput.value.trim().length > 0;
-    if (alreadyFilled && !forceRestart && !autoSubmit) {
+    if (alreadyFilled && !autoSubmit) {
         return;
     }
     clearTimeout(typingTimer);
@@ -209,7 +208,6 @@ form.addEventListener('submit', async (event) => {
 });
 
 if (useTemplateButton) {
-    useTemplateButton.addEventListener('click', () => typeTemplateLink(true, true));
 }
 
 window.addEventListener('beforeunload', () => {
