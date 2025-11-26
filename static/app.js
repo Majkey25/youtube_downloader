@@ -8,8 +8,15 @@ const downloadMp3Anchor = document.getElementById('downloadMp3Anchor');
 const downloadMp4Anchor = document.getElementById('downloadMp4Anchor');
 const useTemplateButton = document.getElementById('useTemplateButton');
 
-const config = window.APP_CONFIG || { apiBaseUrl: '__API_BASE_URL__' };
-const TEMPLATE_LINK = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+const config = window.APP_CONFIG || {
+    apiBaseUrl: '__API_BASE_URL__',
+    templateLink: '__TEMPLATE_LINK__',
+};
+const FALLBACK_TEMPLATE_LINK = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+const TEMPLATE_LINK = config.templateLink && config.templateLink !== '__TEMPLATE_LINK__'
+    ? config.templateLink
+    : FALLBACK_TEMPLATE_LINK;
+const TYPING_DELAY_MS = 55;
 
 const resolveApiBase = () => {
     const params = new URLSearchParams(window.location.search);
@@ -37,7 +44,7 @@ const buildUrl = (path) => {
 let isDownloading = false;
 let messageInterval;
 let warnedAboutApi = false;
-let typingTimeout;
+let typingTimer;
 
 const setHidden = (element, hidden) => {
     if (!element) {
@@ -107,46 +114,50 @@ const showDownloads = (files) => {
     setHidden(downloadArea, false);
 };
 
-const startTemplateTyping = () => {
-    if (!linkInput || linkInput.value.trim()) {
+const typeTemplateLink = (autoSubmit, forceRestart = false) => {
+    if (!linkInput) {
         return;
     }
-    clearTimeout(typingTimeout);
+    const alreadyFilled = linkInput.value.trim().length > 0;
+    if (alreadyFilled && !forceRestart && !autoSubmit) {
+        return;
+    }
+    clearTimeout(typingTimer);
+    linkInput.value = '';
     let index = 0;
     const typeNext = () => {
         if (!linkInput) {
             return;
         }
-        if (
-            document.activeElement === linkInput &&
-            linkInput.value.trim() &&
-            linkInput.value.trim() !== TEMPLATE_LINK.slice(0, linkInput.value.length)
-        ) {
+        const currentValue = linkInput.value;
+        const intendedPrefix = TEMPLATE_LINK.slice(0, currentValue.length);
+        const userIsTypingOtherValue = document.activeElement === linkInput
+            && currentValue
+            && currentValue !== intendedPrefix;
+        if (userIsTypingOtherValue) {
             return;
         }
         linkInput.value = TEMPLATE_LINK.slice(0, index);
         index += 1;
         if (index <= TEMPLATE_LINK.length) {
-            typingTimeout = setTimeout(typeNext, 55);
+            typingTimer = setTimeout(typeNext, TYPING_DELAY_MS);
+            return;
+        }
+        linkInput.focus();
+        if (autoSubmit && form) {
+            form.requestSubmit();
         }
     };
     typeNext();
-};
-
-const fillTemplateLink = () => {
-    clearTimeout(typingTimeout);
-    if (!linkInput) {
-        return;
-    }
-    linkInput.value = TEMPLATE_LINK;
-    linkInput.focus();
 };
 
 const maybeWarnMissingApi = () => {
     const isGitHubPages = window.location.hostname.endsWith('github.io');
     if (!normalizedBase && isGitHubPages && !warnedAboutApi) {
         warnedAboutApi = true;
-        showError('API endpoint is not configured. Set API_BASE_URL in config.js or Pages workflow.');
+        showError(
+            'API endpoint is not configured. Set API_BASE_URL in config.js or Pages workflow.',
+        );
     }
 };
 
@@ -198,7 +209,7 @@ form.addEventListener('submit', async (event) => {
 });
 
 if (useTemplateButton) {
-    useTemplateButton.addEventListener('click', fillTemplateLink);
+    useTemplateButton.addEventListener('click', () => typeTemplateLink(true, true));
 }
 
 window.addEventListener('beforeunload', () => {
@@ -211,4 +222,4 @@ window.addEventListener('beforeunload', () => {
 });
 
 maybeWarnMissingApi();
-startTemplateTyping();
+typeTemplateLink(false);
