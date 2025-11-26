@@ -1,5 +1,5 @@
 // Define the cache name
-const CACHE_NAME = 'yt-downloader-v2';
+const CACHE_NAME = 'yt-downloader-v3';
 
 // Specify the files to cache
 const urlsToCache = [

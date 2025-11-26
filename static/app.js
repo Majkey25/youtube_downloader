@@ -6,15 +6,28 @@ const errorBox = document.getElementById('error');
 const downloadArea = document.getElementById('downloadLink');
 const downloadMp3Anchor = document.getElementById('downloadMp3Anchor');
 const downloadMp4Anchor = document.getElementById('downloadMp4Anchor');
+const useTemplateButton = document.getElementById('useTemplateButton');
 
 const config = window.APP_CONFIG || { apiBaseUrl: '__API_BASE_URL__' };
-const normalizedBase = (() => {
-    const base = config.apiBaseUrl || '';
-    if (base === '__API_BASE_URL__') {
+const TEMPLATE_LINK = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+
+const resolveApiBase = () => {
+    const params = new URLSearchParams(window.location.search);
+    const queryBase = params.get('api') || params.get('backend');
+    const storedBase = localStorage.getItem('apiBaseUrl') || '';
+    const envBase = config.apiBaseUrl || '';
+    const candidate = queryBase || storedBase || envBase;
+    if (!candidate || candidate === '__API_BASE_URL__') {
         return '';
     }
-    return base.endsWith('/') ? base.slice(0, -1) : base;
-})();
+    const trimmed = candidate.endsWith('/') ? candidate.slice(0, -1) : candidate;
+    if (queryBase) {
+        localStorage.setItem('apiBaseUrl', trimmed);
+    }
+    return trimmed;
+};
+
+const normalizedBase = resolveApiBase();
 
 const buildUrl = (path) => {
     const trimmed = path.replace(/^\/+/, '');
@@ -24,6 +37,7 @@ const buildUrl = (path) => {
 let isDownloading = false;
 let messageInterval;
 let warnedAboutApi = false;
+let typingTimeout;
 
 const setHidden = (element, hidden) => {
     if (!element) {
@@ -93,6 +107,41 @@ const showDownloads = (files) => {
     setHidden(downloadArea, false);
 };
 
+const startTemplateTyping = () => {
+    if (!linkInput || linkInput.value.trim()) {
+        return;
+    }
+    clearTimeout(typingTimeout);
+    let index = 0;
+    const typeNext = () => {
+        if (!linkInput) {
+            return;
+        }
+        if (
+            document.activeElement === linkInput &&
+            linkInput.value.trim() &&
+            linkInput.value.trim() !== TEMPLATE_LINK.slice(0, linkInput.value.length)
+        ) {
+            return;
+        }
+        linkInput.value = TEMPLATE_LINK.slice(0, index);
+        index += 1;
+        if (index <= TEMPLATE_LINK.length) {
+            typingTimeout = setTimeout(typeNext, 55);
+        }
+    };
+    typeNext();
+};
+
+const fillTemplateLink = () => {
+    clearTimeout(typingTimeout);
+    if (!linkInput) {
+        return;
+    }
+    linkInput.value = TEMPLATE_LINK;
+    linkInput.focus();
+};
+
 const maybeWarnMissingApi = () => {
     const isGitHubPages = window.location.hostname.endsWith('github.io');
     if (!normalizedBase && isGitHubPages && !warnedAboutApi) {
@@ -148,6 +197,10 @@ form.addEventListener('submit', async (event) => {
     }
 });
 
+if (useTemplateButton) {
+    useTemplateButton.addEventListener('click', fillTemplateLink);
+}
+
 window.addEventListener('beforeunload', () => {
     if (!isDownloading) {
         fetch(buildUrl('delete'), {
@@ -158,3 +211,4 @@ window.addEventListener('beforeunload', () => {
 });
 
 maybeWarnMissingApi();
+startTemplateTyping();
