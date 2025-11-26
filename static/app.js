@@ -23,6 +23,7 @@ const buildUrl = (path) => {
 
 let isDownloading = false;
 let messageInterval;
+let warnedAboutApi = false;
 
 const setHidden = (element, hidden) => {
     if (!element) {
@@ -92,6 +93,14 @@ const showDownloads = (files) => {
     setHidden(downloadArea, false);
 };
 
+const maybeWarnMissingApi = () => {
+    const isGitHubPages = window.location.hostname.endsWith('github.io');
+    if (!normalizedBase && isGitHubPages && !warnedAboutApi) {
+        warnedAboutApi = true;
+        showError('API endpoint is not configured. Set API_BASE_URL in config.js or Pages workflow.');
+    }
+};
+
 form.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!linkInput.value) {
@@ -111,11 +120,16 @@ form.addEventListener('submit', async (event) => {
             body: formData,
         });
 
-        let payload;
-        try {
+        let payload = null;
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
             payload = await response.json();
-        } catch (e) {
-            throw new Error('Server returned an unexpected response. Please try again.');
+        } else {
+            const text = await response.text();
+            const details = normalizedBase
+                ? 'Server did not return JSON.'
+                : 'Are you pointing the frontend to a running backend?';
+            throw new Error(`${details} (${text.slice(0, 120)}...)`);
         }
 
         if (!response.ok) {
@@ -142,3 +156,5 @@ window.addEventListener('beforeunload', () => {
         }).catch(() => {});
     }
 });
+
+maybeWarnMissingApi();
