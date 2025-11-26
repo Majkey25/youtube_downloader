@@ -1,5 +1,5 @@
-// Define the cache name
-const CACHE_NAME = 'yt-downloader-v3';
+// Define the cache name (bump version to refresh stale assets)
+const CACHE_NAME = 'yt-downloader-v4';
 
 // Specify the files to cache
 const urlsToCache = [
@@ -8,6 +8,7 @@ const urlsToCache = [
     'static/styles.css',
     'static/app.js',
     'static/config.js',
+    'static/manifest.json',
     'static/logo/logo-192x192.png',
     'static/logo/logo-512x512.png',
 ];
