@@ -1,62 +1,65 @@
 # YouTube Downloader
 
-Fast MP3/MP4 downloads powered by `yt-dlp`, Flask, and a minimal glassy UI ready for GitHub Pages.
+A small Flask + `yt-dlp` utility that prepares MP3 and MP4 files from a YouTube link.
 
-## Features
-- Clean, responsive landing page with subtle glow animations.
-- High-quality MP3 + MP4 downloads via `yt-dlp` (runs on the backend).
-- Config-driven: all tunables live in `config.py` and can be overridden with environment variables.
-- PWA support (manifest + service worker) with cache-friendly relative paths.
-- GitHub Actions workflow to ship the static site to GitHub Pages.
+Use it only for media you own or have permission to download.
 
 ## Requirements
-- Python 3.10+
-- `ffmpeg` available on the system path (required by `yt-dlp` for audio extraction).
 
-## Quick start (local backend)
+- Python 3.10+
+- `ffmpeg` and `ffprobe` on `PATH`
+
+The Python dependencies include `yt-dlp`'s default components and Deno runtime for full YouTube support.
+
+## Run locally
+
 1. Create and activate a virtual environment.
-   ```bash
+
+   ```powershell
    python -m venv .venv
-   .venv/Scripts/Activate.ps1  # Windows PowerShell
+   .venv\Scripts\Activate.ps1
    ```
+
 2. Install dependencies.
-   ```bash
-   pip install -r requirements.txt
+
+   ```powershell
+   python -m pip install -r requirements.txt
    ```
-3. (Optional) Set environment variables to override defaults in `config.py`:
-   - `SECRET_KEY` (Flask session key)
-   - `DOWNLOAD_DIR` (default: `<repo>/downloads`)
-   - `HOST` (default: `0.0.0.0`)
-   - `PORT` (default: `8080`)
-   - `USER_AGENT`, `MAX_RETRIES`, `RANDOM_DELAY_MIN_SECONDS`, `RANDOM_DELAY_MAX_SECONDS`
-4. Run the server.
-   ```bash
+
+3. Start the server.
+
+   ```powershell
    python app.py
    ```
-5. Open `http://localhost:8080` and paste a YouTube link.
 
-## Deployment model
-GitHub Pages is static-only. The UI deploys there, while the Flask backend must run elsewhere
-(Render, Railway, Fly.io, VPS, etc.). Point the frontend to your backend URL via
-`static/config.js` (or let the workflow rewrite it with `API_BASE_URL`).
+4. Open `http://localhost:8080`.
 
-## GitHub Pages workflow
-`/.github/workflows/pages.yml` builds and publishes the static assets from `templates/` and
-`static/` to GitHub Pages.
+Optional environment variables:
 
-Before enabling Pages:
-- In repository **Settings → Pages**, choose `GitHub Actions` as the source.
-- (Optional) Add repository variable `API_BASE_URL` with your backend base URL (e.g.
-  `https://your-backend.example.com`). The workflow will inject it into `static/config.js`.
+- `DOWNLOAD_DIR` -> defaults to `<repo>/downloads`
+- `HOST` -> defaults to `0.0.0.0`
+- `PORT` -> defaults to `8080`
+- `MAX_RETRIES` -> defaults to `3`
+- `MAX_DURATION_SECONDS` -> defaults to `7200`
+- `MAX_MEDIA_BYTES` -> defaults to `536870912` per output file
+- `MAX_STORED_BYTES` -> defaults to `2147483648`
+- `STALE_FILE_AGE_SECONDS` -> defaults to `3600`
+- `MAX_REQUEST_BYTES` -> defaults to `16384`
+- `ALLOWED_ORIGINS` -> comma-separated browser origins allowed to call the API; defaults to `https://majkey25.github.io`
 
-Manual run:
-- Trigger “Deploy static site to Pages” from the Actions tab, or push to `main`.
+## Deploy the static UI
 
-## Notes
-- The service worker caches `index.html`, CSS/JS, and icons using relative paths, so it also works
-  under the `/<repo>` GitHub Pages prefix.
-- Downloads are cleaned up via the `/delete` endpoint on page unload; you can also POST to `/delete`
-  to purge the last files.
+GitHub Pages serves only the UI. The Flask API must run on a separate host.
+
+1. Deploy this repository's Flask app to a Python host with `ffmpeg` available.
+2. Set the backend's `ALLOWED_ORIGINS` to the exact Pages origin.
+3. Set the repository variable `API_BASE_URL` to the backend base URL.
+4. Enable GitHub Pages with **GitHub Actions** as the source.
+
+Without `API_BASE_URL`, Pages still deploys the UI but disables downloads with a clear configuration message.
+
+Only direct video links are accepted; playlists, live streams, videos over two hours, and oversized files are rejected. Generated files are served once from `/downloads/<filename>` and then removed. The browser also requests cleanup when replacing a result or leaving the page, and the server expires abandoned artifacts before new jobs.
 
 ## License
-This project is licensed under the MIT License. See `LICENSE` for details.
+
+MIT. See [LICENSE](LICENSE).

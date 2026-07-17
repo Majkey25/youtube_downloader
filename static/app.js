@@ -1,223 +1,159 @@
 const form = document.getElementById('downloadForm');
 const linkInput = document.getElementById('youtubeLink');
+const submitButton = document.getElementById('submitButton');
+const hint = document.getElementById('hint');
 const loadingBar = document.getElementById('loadingText');
-const loadingCopy = document.getElementById('loadingCopy');
 const errorBox = document.getElementById('error');
 const downloadArea = document.getElementById('downloadLink');
 const downloadMp3Anchor = document.getElementById('downloadMp3Anchor');
 const downloadMp4Anchor = document.getElementById('downloadMp4Anchor');
 
-const config = window.APP_CONFIG || {
-    apiBaseUrl: '__API_BASE_URL__',
-    templateLink: '__TEMPLATE_LINK__',
-};
-const FALLBACK_TEMPLATE_LINK = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
-const TEMPLATE_LINK = config.templateLink && config.templateLink !== '__TEMPLATE_LINK__'
-    ? config.templateLink
-    : FALLBACK_TEMPLATE_LINK;
-const TYPING_DELAY_MS = 55;
-
-const resolveApiBase = () => {
-    const params = new URLSearchParams(window.location.search);
-    const queryBase = params.get('api') || params.get('backend');
-    const storedBase = localStorage.getItem('apiBaseUrl') || '';
-    const envBase = config.apiBaseUrl || '';
-    const candidate = queryBase || storedBase || envBase;
-    if (!candidate || candidate === '__API_BASE_URL__') {
-        return '';
-    }
-    const trimmed = candidate.endsWith('/') ? candidate.slice(0, -1) : candidate;
-    if (queryBase) {
-        localStorage.setItem('apiBaseUrl', trimmed);
-    }
-    return trimmed;
-};
-
-const normalizedBase = resolveApiBase();
+const configuredApiBase = window.APP_CONFIG?.apiBaseUrl;
+const normalizedBase = typeof configuredApiBase === 'string'
+    && configuredApiBase !== '__API_BASE_URL__'
+    ? configuredApiBase.trim().replace(/\/+$/, '')
+    : '';
+const backendIsMissing = window.location.hostname.endsWith('github.io') && !normalizedBase;
 
 const buildUrl = (path) => {
-    const trimmed = path.replace(/^\/+/, '');
-    return normalizedBase ? `${normalizedBase}/${trimmed}` : trimmed;
+    const cleanPath = path.replace(/^\/+/, '');
+    return normalizedBase ? `${normalizedBase}/${cleanPath}` : `/${cleanPath}`;
 };
 
 let isDownloading = false;
-let messageInterval;
-let warnedAboutApi = false;
-let typingTimer;
+let currentFiles = [];
 
 const setHidden = (element, hidden) => {
-    if (!element) {
+    element.classList.toggle('hidden', hidden);
+};
+
+const setBusy = (busy) => {
+    isDownloading = busy;
+    linkInput.disabled = busy;
+    submitButton.disabled = busy || backendIsMissing;
+    submitButton.textContent = busy ? 'Preparing…' : 'Prepare files';
+};
+
+const deleteFiles = async (files, keepalive = false) => {
+    if (files.length === 0) {
         return;
     }
-    if (hidden) {
-        element.classList.add('hidden');
-    } else {
-        element.classList.remove('hidden');
+    const formData = new FormData();
+    files.forEach((file) => formData.append('files', file));
+    try {
+        await fetch(buildUrl('delete'), {
+            method: 'POST',
+            body: formData,
+            keepalive,
+        });
+    } catch {
+        // Server-side expiration is the fallback for interrupted cleanup.
     }
 };
 
-const resetUI = () => {
-    clearInterval(messageInterval);
+const releaseCurrentFiles = async () => {
+    const files = currentFiles;
+    currentFiles = [];
+    await deleteFiles(files);
+};
+
+const resetFeedback = () => {
+    setHidden(hint, false);
     setHidden(loadingBar, true);
     setHidden(errorBox, true);
     setHidden(downloadArea, true);
-    if (loadingCopy) {
-        loadingCopy.textContent = 'Preparing your download';
-    }
 };
 
 const startLoading = () => {
-    const steps = [
-        'Preparing your download',
-        'Fetching the stream',
-        'Converting formats',
-        'Wrapping it up',
-    ];
-    let index = 0;
+    setHidden(hint, true);
     setHidden(loadingBar, false);
-    messageInterval = setInterval(() => {
-        index = (index + 1) % steps.length;
-        if (loadingCopy) {
-            loadingCopy.textContent = steps[index];
-        }
-    }, 1200);
 };
 
 const showError = (message) => {
-    if (!errorBox) {
-        return;
-    }
     errorBox.textContent = message;
+    setHidden(hint, true);
+    setHidden(loadingBar, true);
+    setHidden(downloadArea, true);
     setHidden(errorBox, false);
 };
 
 const showDownloads = (files) => {
-    if (!files) {
-        return;
+    const mp3File = typeof files?.mp3_file === 'string' ? files.mp3_file : '';
+    const mp4File = typeof files?.mp4_file === 'string' ? files.mp4_file : '';
+    if (!mp3File || !mp4File) {
+        throw new Error('Download server returned incomplete file information.');
     }
-    const { mp3_file: mp3File, mp4_file: mp4File } = files;
-    if (mp3File && downloadMp3Anchor) {
-        downloadMp3Anchor.href = `${buildUrl('downloads')}/${mp3File}`;
-        downloadMp3Anchor.download = mp3File;
-        setHidden(downloadMp3Anchor, false);
-    } else if (downloadMp3Anchor) {
-        setHidden(downloadMp3Anchor, true);
-    }
-    if (mp4File && downloadMp4Anchor) {
-        downloadMp4Anchor.href = `${buildUrl('downloads')}/${mp4File}`;
-        downloadMp4Anchor.download = mp4File;
-        setHidden(downloadMp4Anchor, false);
-    } else if (downloadMp4Anchor) {
-        setHidden(downloadMp4Anchor, true);
-    }
+
+    downloadMp3Anchor.href = `${buildUrl('downloads')}/${encodeURIComponent(mp3File)}`;
+    downloadMp3Anchor.download = mp3File;
+    downloadMp4Anchor.href = `${buildUrl('downloads')}/${encodeURIComponent(mp4File)}`;
+    downloadMp4Anchor.download = mp4File;
+    currentFiles = [mp3File, mp4File];
+
+    setHidden(hint, true);
+    setHidden(loadingBar, true);
+    setHidden(errorBox, true);
     setHidden(downloadArea, false);
 };
 
-const typeTemplateLink = (autoSubmit) => {
-    if (!linkInput) {
-        return;
-    }
-    const alreadyFilled = linkInput.value.trim().length > 0;
-    if (alreadyFilled && !autoSubmit) {
-        return;
-    }
-    clearTimeout(typingTimer);
-    linkInput.value = '';
-    let index = 0;
-    const typeNext = () => {
-        if (!linkInput) {
-            return;
-        }
-        const currentValue = linkInput.value;
-        const intendedPrefix = TEMPLATE_LINK.slice(0, currentValue.length);
-        const userIsTypingOtherValue = document.activeElement === linkInput
-            && currentValue
-            && currentValue !== intendedPrefix;
-        if (userIsTypingOtherValue) {
-            return;
-        }
-        linkInput.value = TEMPLATE_LINK.slice(0, index);
-        index += 1;
-        if (index <= TEMPLATE_LINK.length) {
-            typingTimer = setTimeout(typeNext, TYPING_DELAY_MS);
-            return;
-        }
-        linkInput.focus();
-        if (autoSubmit && form) {
-            form.requestSubmit();
-        }
-    };
-    typeNext();
-};
-
-const maybeWarnMissingApi = () => {
-    const isGitHubPages = window.location.hostname.endsWith('github.io');
-    if (!normalizedBase && isGitHubPages && !warnedAboutApi) {
-        warnedAboutApi = true;
-        showError(
-            'API endpoint is not configured. Set API_BASE_URL in config.js or Pages workflow.',
-        );
+const warnIfBackendIsMissing = () => {
+    if (backendIsMissing) {
+        showError('Download server is not configured. Set API_BASE_URL before deploying.');
+        setBusy(false);
     }
 };
 
 form.addEventListener('submit', async (event) => {
     event.preventDefault();
-    if (!linkInput.value) {
-        showError('Please paste a valid YouTube link.');
+    if (backendIsMissing) {
+        warnIfBackendIsMissing();
         return;
     }
-    resetUI();
+    if (isDownloading) {
+        return;
+    }
+    const youtubeLink = linkInput.value.trim();
+    if (!youtubeLink) {
+        showError('Paste a valid YouTube link.');
+        return;
+    }
+
+    resetFeedback();
     startLoading();
-    isDownloading = true;
+    setBusy(true);
 
     try {
+        await releaseCurrentFiles();
         const formData = new FormData();
-        formData.append('youtubeLink', linkInput.value.trim());
-
+        formData.append('youtubeLink', youtubeLink);
         const response = await fetch(buildUrl('download'), {
             method: 'POST',
             body: formData,
         });
-
-        let payload = null;
         const contentType = response.headers.get('content-type') || '';
-        if (contentType.includes('application/json')) {
-            payload = await response.json();
-        } else {
-            const text = await response.text();
-            const details = normalizedBase
-                ? 'Server did not return JSON.'
-                : 'Are you pointing the frontend to a running backend?';
-            throw new Error(`${details} (${text.slice(0, 120)}...)`);
+        if (!contentType.includes('application/json')) {
+            throw new Error('Download server returned an invalid response.');
         }
 
+        const payload = await response.json();
         if (!response.ok) {
-            throw new Error(payload.error || 'Download failed. Please retry.');
+            throw new Error(payload?.error || 'Download failed. Try again.');
         }
-
-        clearInterval(messageInterval);
-        setHidden(loadingBar, true);
-        showDownloads(payload.files);
+        showDownloads(payload?.files);
     } catch (error) {
-        clearInterval(messageInterval);
-        setHidden(loadingBar, true);
-        showError(error.message || 'Something went wrong.');
+        const message = error instanceof Error ? error.message : 'Download failed. Try again.';
+        showError(message);
     } finally {
-        isDownloading = false;
+        setBusy(false);
     }
 });
-
-if (useTemplateButton) {
-}
 
 window.addEventListener('beforeunload', () => {
-    if (!isDownloading) {
-        fetch(buildUrl('delete'), {
-            method: 'POST',
-            keepalive: true,
-        }).catch(() => {});
+    if (isDownloading || currentFiles.length === 0) {
+        return;
     }
+    void deleteFiles(currentFiles, true);
 });
 
-maybeWarnMissingApi();
-typeTemplateLink(false);
+document.getElementById('year').textContent = new Date().getFullYear();
+warnIfBackendIsMissing();

@@ -5,18 +5,34 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).parent
 DEFAULT_DOWNLOAD_DIR = ROOT_DIR / "downloads"
+DEFAULT_ALLOWED_ORIGINS = "https://majkey25.github.io"
 
 DOWNLOAD_DIR = Path(os.getenv("DOWNLOAD_DIR", DEFAULT_DOWNLOAD_DIR)).resolve()
-SECRET_KEY = os.getenv("SECRET_KEY", "change-me")
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8080"))
-USER_AGENT = os.getenv(
-    "USER_AGENT",
-    (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-        "(KHTML, like Gecko) Chrome/120.0 Safari/537.36"
-    ),
-)
 MAX_RETRIES = int(os.getenv("MAX_RETRIES", "3"))
-RANDOM_DELAY_MIN_SECONDS = float(os.getenv("RANDOM_DELAY_MIN_SECONDS", "0"))
-RANDOM_DELAY_MAX_SECONDS = float(os.getenv("RANDOM_DELAY_MAX_SECONDS", "1.0"))
+MAX_DURATION_SECONDS = int(os.getenv("MAX_DURATION_SECONDS", "7200"))
+MAX_MEDIA_BYTES = int(os.getenv("MAX_MEDIA_BYTES", str(512 * 1024 * 1024)))
+MAX_STORED_BYTES = int(os.getenv("MAX_STORED_BYTES", str(2 * 1024 * 1024 * 1024)))
+STALE_FILE_AGE_SECONDS = int(os.getenv("STALE_FILE_AGE_SECONDS", "3600"))
+MAX_REQUEST_BYTES = int(os.getenv("MAX_REQUEST_BYTES", "16384"))
+_origins = os.getenv("ALLOWED_ORIGINS", DEFAULT_ALLOWED_ORIGINS).split(",")
+ALLOWED_ORIGINS = frozenset(
+    origin.strip().rstrip("/") for origin in _origins if origin.strip()
+)
+
+if MAX_RETRIES < 0:
+    raise ValueError("MAX_RETRIES must be zero or greater")
+if (
+    min(
+        MAX_DURATION_SECONDS,
+        MAX_MEDIA_BYTES,
+        MAX_STORED_BYTES,
+        STALE_FILE_AGE_SECONDS,
+        MAX_REQUEST_BYTES,
+    )
+    <= 0
+):
+    raise ValueError("Resource limits must be greater than zero")
+if MAX_STORED_BYTES < 2 * MAX_MEDIA_BYTES:
+    raise ValueError("MAX_STORED_BYTES must fit one MP3 and MP4 job")
