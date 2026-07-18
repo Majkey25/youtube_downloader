@@ -6,7 +6,6 @@ services:
     region: frankfurt
     healthCheckPath: /
     autoDeployTrigger: commit
-    maxShutdownDelaySeconds: 300
     envVars:
       - key: ALLOWED_ORIGINS
         value: https://majkey25.github.io
