@@ -102,6 +102,9 @@ def is_youtube_url(value: str) -> bool:
 def extract_title(link: str) -> str:
     with YoutubeDL(
         {
+            "extractor_args": {
+                "youtube": {"player_client": ["default", "web_embedded"]}
+            },
             "quiet": True,
             "max_filesize": MAX_MEDIA_BYTES,
             "noplaylist": True,
@@ -138,6 +141,9 @@ def download_media(link: str) -> dict[str, str]:
     try:
         with YoutubeDL(
             {
+                "extractor_args": {
+                    "youtube": {"player_client": ["default", "web_embedded"]}
+                },
                 "quiet": True,
                 "max_filesize": MAX_MEDIA_BYTES,
                 "noplaylist": True,
@@ -159,6 +165,9 @@ def download_media(link: str) -> dict[str, str]:
 
         with YoutubeDL(
             {
+                "extractor_args": {
+                    "youtube": {"player_client": ["default", "web_embedded"]}
+                },
                 "quiet": True,
                 "max_filesize": MAX_MEDIA_BYTES,
                 "noplaylist": True,
