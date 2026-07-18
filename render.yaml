@@ -3,7 +3,7 @@ services:
     name: majkey25-youtube-downloader
     runtime: docker
     plan: free
-    region: frankfurt
+    region: oregon
     healthCheckPath: /
     autoDeployTrigger: commit
     envVars:
