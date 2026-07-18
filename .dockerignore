@@ -1,0 +1,9 @@
+.git
+.github
+.reference
+.ruff_cache
+__pycache__
+*.pyc
+.env
+downloads
+site

@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: majkey25-youtube-downloader
+    runtime: docker
+    plan: free
+    region: frankfurt
+    healthCheckPath: /
+    autoDeployTrigger: commit
+    maxShutdownDelaySeconds: 300
+    envVars:
+      - key: ALLOWED_ORIGINS
+        value: https://majkey25.github.io
+      - key: DOWNLOAD_DIR
+        value: /tmp/youtube-downloads
+      - key: MAX_DURATION_SECONDS
+        value: "600"
+      - key: MAX_MEDIA_BYTES
+        value: "134217728"
+      - key: MAX_STORED_BYTES
+        value: "536870912"
+      - key: MAX_RETRIES
+        value: "2"
+      - key: STALE_FILE_AGE_SECONDS
+        value: "900"
+      - key: RATE_LIMIT_REQUESTS
+        value: "5"
+      - key: RATE_LIMIT_WINDOW_SECONDS
+        value: "3600"

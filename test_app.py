@@ -15,6 +15,8 @@ class AppTest(unittest.TestCase):
         self.addCleanup(self.temp_dir.cleanup)
         target.DOWNLOAD_PATH = Path(self.temp_dir.name)
         target.app.config.update(TESTING=True)
+        with target.DOWNLOAD_ATTEMPTS_LOCK:
+            target.DOWNLOAD_ATTEMPTS.clear()
         self.client = target.app.test_client()
 
     def test_accepts_direct_video_urls_only(self) -> None:
@@ -46,6 +48,47 @@ class AppTest(unittest.TestCase):
         )
         self.assertEqual(oversized.status_code, 413)
         self.assertEqual(oversized.get_json(), {"error": "Request is too large."})
+
+    def test_limits_download_requests_per_client(self) -> None:
+        data = {"youtubeLink": "https://youtu.be/jNQXAC9IVRw"}
+        first_headers = {"X-Forwarded-For": "203.0.113.10, 10.0.0.1"}
+        second_headers = {"X-Forwarded-For": "203.0.113.10, 10.0.0.2"}
+        files = {"mp3_file": "test.mp3", "mp4_file": "test.mp4"}
+
+        with (
+            patch.object(target, "RATE_LIMIT_REQUESTS", 1),
+            patch.object(target, "download_media", return_value=files),
+        ):
+            self.assertEqual(
+                self.client.post(
+                    "/download", data=data, headers=first_headers
+                ).status_code,
+                200,
+            )
+            limited = self.client.post("/download", data=data, headers=second_headers)
+
+        self.assertEqual(limited.status_code, 429)
+        self.assertEqual(
+            limited.get_json(),
+            {"error": "Download limit reached. Try again later."},
+        )
+
+    def test_reserves_capacity_after_one_abandoned_job(self) -> None:
+        for extension in ("mp3", "mp4"):
+            target_file = (
+                target.DOWNLOAD_PATH / f"yt-download-old-{'c' * 32}.{extension}"
+            )
+            target_file.write_bytes(b"x" * 100)
+
+        with (
+            patch.object(target, "MAX_MEDIA_BYTES", 100),
+            patch.object(target, "MAX_STORED_BYTES", 400),
+        ):
+            target.ensure_storage_capacity()
+            extra = target.DOWNLOAD_PATH / f"yt-download-extra-{'d' * 32}.part"
+            extra.write_bytes(b"x")
+            with self.assertRaises(target.StorageLimitError):
+                target.ensure_storage_capacity()
 
     def test_generated_file_is_deleted_after_delivery(self) -> None:
         unrelated = target.DOWNLOAD_PATH / "private.txt"

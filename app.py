@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import logging
 import re
+from collections import OrderedDict, deque
 from collections.abc import Iterable, Iterator
 from pathlib import Path
-from threading import BoundedSemaphore
-from time import time
+from threading import BoundedSemaphore, Lock
+from time import monotonic, time
 from typing import cast
 from urllib.parse import parse_qs, urlsplit
 from uuid import uuid4
@@ -32,6 +33,9 @@ from config import (
     MAX_RETRIES,
     MAX_STORED_BYTES,
     PORT,
+    RATE_LIMIT_MAX_CLIENTS,
+    RATE_LIMIT_REQUESTS,
+    RATE_LIMIT_WINDOW_SECONDS,
     STALE_FILE_AGE_SECONDS,
 )
 
@@ -57,6 +61,8 @@ MAX_DELETE_FILES = 2
 # ponytail: one in-process job protects local disk.
 # Add an external queue before adding workers.
 DOWNLOAD_SLOT = BoundedSemaphore(1)
+DOWNLOAD_ATTEMPTS: OrderedDict[str, deque[float]] = OrderedDict()
+DOWNLOAD_ATTEMPTS_LOCK = Lock()
 
 
 class MediaLimitError(Exception):
@@ -240,6 +246,32 @@ def request_origin_is_allowed() -> bool:
     return normalized == request.host_url.rstrip("/") or normalized in ALLOWED_ORIGINS
 
 
+def request_client_id() -> str:
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        client_ip = forwarded_for.partition(",")[0].strip()
+        if client_ip:
+            return client_ip
+    return request.remote_addr or "unknown"
+
+
+def download_rate_limit_exceeded(client_id: str) -> bool:
+    now = monotonic()
+    cutoff = now - RATE_LIMIT_WINDOW_SECONDS
+    with DOWNLOAD_ATTEMPTS_LOCK:
+        attempts = DOWNLOAD_ATTEMPTS.pop(client_id, deque())
+        while attempts and attempts[0] <= cutoff:
+            attempts.popleft()
+        if len(attempts) >= RATE_LIMIT_REQUESTS:
+            DOWNLOAD_ATTEMPTS[client_id] = attempts
+            return True
+        attempts.append(now)
+        DOWNLOAD_ATTEMPTS[client_id] = attempts
+        while len(DOWNLOAD_ATTEMPTS) > RATE_LIMIT_MAX_CLIENTS:
+            DOWNLOAD_ATTEMPTS.popitem(last=False)
+    return False
+
+
 @app.after_request
 def add_cors_headers(response: Response) -> Response:
     origin = request.headers.get("Origin", "").rstrip("/")
@@ -276,6 +308,9 @@ def download() -> Response | tuple[Response, int]:
 
     if not is_youtube_url(youtube_link):
         return jsonify({"error": "Please provide a direct YouTube video link."}), 400
+
+    if download_rate_limit_exceeded(request_client_id()):
+        return jsonify({"error": "Download limit reached. Try again later."}), 429
 
     if not DOWNLOAD_SLOT.acquire(blocking=False):
         return jsonify({"error": "Another download is running. Try again soon."}), 429
