@@ -106,6 +106,9 @@ def extract_title(link: str) -> str:
             "max_filesize": MAX_MEDIA_BYTES,
             "noplaylist": True,
             "retries": MAX_RETRIES,
+            "extractor_args": {
+                "youtube": {"player_client": ["default", "web_embedded"]}
+            },
         }
     ) as client:
         info = client.extract_info(link, download=False)
@@ -142,6 +145,9 @@ def download_media(link: str) -> dict[str, str]:
                 "max_filesize": MAX_MEDIA_BYTES,
                 "noplaylist": True,
                 "retries": MAX_RETRIES,
+                "extractor_args": {
+                    "youtube": {"player_client": ["default", "web_embedded"]}
+                },
                 "outtmpl": str(DOWNLOAD_PATH / f"{title_stem}.%(ext)s"),
                 "format": "bestaudio/best",
                 "postprocessors": [
@@ -163,6 +169,9 @@ def download_media(link: str) -> dict[str, str]:
                 "max_filesize": MAX_MEDIA_BYTES,
                 "noplaylist": True,
                 "retries": MAX_RETRIES,
+                "extractor_args": {
+                    "youtube": {"player_client": ["default", "web_embedded"]}
+                },
                 "outtmpl": str(DOWNLOAD_PATH / f"{title_stem}.%(ext)s"),
                 "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]",
                 "merge_output_format": "mp4",
