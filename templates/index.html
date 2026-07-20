@@ -4,12 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#f7f7f5">
-    <meta name="description" content="Prepare MP3 and MP4 files from a YouTube link.">
-    <title>YouTube Downloader</title>
+    <meta name="description" content="This YouTube Downloader project is deprecated.">
+    <title>YouTube Downloader · Deprecated</title>
     <link rel="stylesheet" href="static/styles.css">
     <link rel="icon" href="static/logo/logo-512x512.png" type="image/png">
-    <script src="static/config.js" defer></script>
-    <script src="static/app.js" defer></script>
 </head>
 <body>
     <header class="site-header">
@@ -24,63 +22,19 @@
     <main class="page">
         <section class="tool" aria-labelledby="page-title">
             <div class="intro">
-                <h1 id="page-title">Download audio or video.</h1>
+                <h1 id="page-title">This project is deprecated.</h1>
                 <p>
-                    Paste a YouTube link. We’ll prepare MP3 and MP4 files at the highest
-                    available quality.
+                    The downloader is no longer maintained or available. The source
+                    remains on <a href="https://github.com/Majkey25/youtube_downloader">GitHub</a>
+                    for reference.
                 </p>
-            </div>
-
-            <form id="downloadForm" class="form">
-                <label for="youtubeLink">YouTube link</label>
-                <div class="input-row">
-                    <input
-                        type="url"
-                        id="youtubeLink"
-                        name="youtubeLink"
-                        placeholder="https://www.youtube.com/watch?v=..."
-                        autocomplete="off"
-                        inputmode="url"
-                        aria-describedby="feedback"
-                        required
-                    >
-                    <button id="submitButton" type="submit" class="primary">
-                        Prepare files
-                    </button>
-                </div>
-            </form>
-
-            <div id="feedback" class="feedback" aria-live="polite" aria-atomic="true">
-                <p id="hint" class="hint">
-                    <span class="clock" aria-hidden="true"></span>
-                    Large videos can take a few minutes.
-                </p>
-
-                <div id="loadingText" class="status hidden">
-                    <span class="spinner" aria-hidden="true"></span>
-                    <span>Preparing MP3 and MP4 files…</span>
-                </div>
-
-                <div id="error" class="error hidden" role="alert"></div>
-
-                <div id="downloadLink" class="download-area hidden">
-                    <p class="status-title">Files ready.</p>
-                    <div class="download-actions">
-                        <a id="downloadMp3Anchor" class="download-button" href="" download>
-                            Download MP3
-                        </a>
-                        <a id="downloadMp4Anchor" class="download-button" href="" download>
-                            Download MP4
-                        </a>
-                    </div>
-                </div>
             </div>
         </section>
     </main>
 
     <footer class="footer">
         <a href="https://majkey25.github.io/My-website-for-fun/">
-            Made by Matěj Teplý · <span id="year"></span>
+            Made by Matěj Teplý
         </a>
     </footer>
 </body>

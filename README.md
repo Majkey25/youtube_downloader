@@ -1,5 +1,8 @@
 # YouTube Downloader
 
+> [!WARNING]
+> This project is deprecated and no longer maintained. The source remains available for reference.
+
 A small Flask + `yt-dlp` utility that prepares MP3 and MP4 files from a YouTube link.
 
 Use it only for media you own or have permission to download.
