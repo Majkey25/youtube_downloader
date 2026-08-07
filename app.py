@@ -2298,6 +2298,7 @@ def add_response_headers(response: Response) -> Response:
         "connect-src 'self' https://majkey25-ytdl.alwaysdata.net; object-src 'none'; "
         "base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
     )
+    response.headers["Strict-Transport-Security"] = "max-age=31536000"
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "no-referrer"
