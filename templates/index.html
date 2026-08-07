@@ -1,100 +1,238 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#f7f7f5">
-    <meta name="description" content="Prepare MP3 and MP4 files from a YouTube link.">
-    <title>YouTube Downloader</title>
+    <meta charset="utf-8">
+    <meta
+        http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' __API_BASE_URL__; object-src 'none'; base-uri 'none'; form-action 'self'"
+    >
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f5f2">
+    <meta name="referrer" content="no-referrer">
+    <meta
+        name="description"
+        content="Inspect public media links and prepare one compatible audio or video file."
+    >
+    <title>MEDIA/DL — Public media downloader</title>
     <link rel="stylesheet" href="static/styles.css">
-    <link rel="icon" href="static/logo/logo-512x512.png" type="image/png">
     <script src="static/config.js" defer></script>
     <script src="static/app.js" defer></script>
 </head>
 <body>
+    <div class="page-wipe" aria-hidden="true"></div>
+    <a class="skip-link" href="#workspace">Skip to downloader</a>
+
     <header class="site-header">
-        <a class="brand" href="./" aria-label="YouTube Downloader home">
-            <span class="brand-mark" aria-hidden="true">
-                <img src="static/logo/logo-192x192.png" alt="">
-            </span>
-            <span>YouTube Downloader</span>
+        <a class="brand" href="./" aria-label="MEDIA/DL home">
+            <span>MEDIA</span><span class="brand-slash">/DL</span>
         </a>
+        <div class="site-controls">
+            <p class="engine-status">ENGINE // YT-DLP</p>
+            <button
+                id="themeToggle"
+                class="theme-toggle"
+                type="button"
+                aria-label="Switch to dark theme"
+            >
+                <span id="themeLabel">DARK</span>
+                <span class="theme-icon" aria-hidden="true"></span>
+            </button>
+        </div>
     </header>
 
-    <main class="page">
-        <section class="tool" aria-labelledby="page-title">
-            <div class="intro">
-                <h1 id="page-title">Download audio or video.</h1>
-                <p>
-                    Paste a YouTube link. We’ll prepare compatible MP3 and MP4 files.
-                </p>
+    <div
+        class="source-ticker"
+        role="region"
+        tabindex="0"
+        aria-label="Common supported source families. Availability varies by URL. Focus to pause."
+    >
+        <p class="ticker-label">COMMON SOURCES</p>
+        <div class="ticker-window" aria-hidden="true">
+            <div class="ticker-track">
+                <div class="ticker-group">
+                    <span>YouTube</span><span>YouTube Music</span><span>Twitch</span>
+                    <span>Instagram</span><span>TikTok</span><span>Facebook</span>
+                    <span>X / Twitter</span><span>Reddit</span><span>Vimeo</span>
+                    <span>Dailymotion</span><span>SoundCloud</span><span>Bandcamp</span>
+                    <span>Mixcloud</span><span>Bilibili</span><span>Kick</span>
+                    <span>Rumble</span><span>Streamable</span><span>9GAG</span>
+                    <span>Imgur</span><span>BBC / ITV</span><span>ARD / ZDF</span>
+                    <span>Thousands more</span>
+                </div>
+                <div class="ticker-group ticker-copy">
+                    <span>YouTube</span><span>YouTube Music</span><span>Twitch</span>
+                    <span>Instagram</span><span>TikTok</span><span>Facebook</span>
+                    <span>X / Twitter</span><span>Reddit</span><span>Vimeo</span>
+                    <span>Dailymotion</span><span>SoundCloud</span><span>Bandcamp</span>
+                    <span>Mixcloud</span><span>Bilibili</span><span>Kick</span>
+                    <span>Rumble</span><span>Streamable</span><span>9GAG</span>
+                    <span>Imgur</span><span>BBC / ITV</span><span>ARD / ZDF</span>
+                    <span>Thousands more</span>
+                </div>
             </div>
+        </div>
+    </div>
 
-            <form id="downloadForm" class="form">
-                <label for="youtubeLink">YouTube link</label>
+    <main id="workspace">
+        <section class="workbench" aria-labelledby="page-title">
+            <header class="workbench-heading">
+                <p class="eyebrow">PUBLIC MEDIA TERMINAL // SOURCE-AWARE</p>
+                <h1 id="page-title">ONE LINK.<br>ONE CLEAN OUTPUT.</h1>
+                <p class="lede">
+                    Inspect a public link first. Available formats come from the source,
+                    not from guesswork.
+                </p>
+            </header>
+
+            <form id="inspectForm" class="inspect-form">
+                <div class="field-heading">
+                    <label for="mediaUrl">Public media URL</label>
+                    <output id="pendingSource" for="mediaUrl">WAITING FOR LINK</output>
+                </div>
                 <div class="input-row">
                     <input
+                        id="mediaUrl"
+                        name="url"
                         type="url"
-                        id="youtubeLink"
-                        name="youtubeLink"
                         placeholder="https://www.youtube.com/watch?v=..."
                         autocomplete="off"
                         inputmode="url"
-                        aria-describedby="feedback"
+                        maxlength="2048"
+                        spellcheck="false"
+                        aria-describedby="statusText legalNote"
                         required
                     >
-                    <button id="submitButton" type="submit" class="primary">
-                        Prepare files
+                    <button id="analyzeButton" class="action-button" type="submit">
+                        Analyze
                     </button>
                 </div>
             </form>
 
-            <div id="feedback" class="feedback" aria-live="polite" aria-atomic="true">
-                <p id="hint" class="hint">
-                    <span class="clock" aria-hidden="true"></span>
-                    Large videos can take a few minutes.
-                </p>
-
-                <div id="loadingText" class="status hidden">
-                    <span class="spinner" aria-hidden="true"></span>
-                    <span>Preparing MP3 and MP4 files…</span>
-                </div>
-
-                <div id="error" class="error hidden" role="alert"></div>
-
-                <div id="downloadLink" class="download-area hidden">
-                    <p class="status-title">Files ready.</p>
-                    <div class="download-actions">
-                        <a
-                            id="downloadMp3Anchor"
-                            class="download-button"
-                            href=""
-                            target="_blank"
-                            rel="noopener"
-                            download
-                        >
-                            Download MP3
-                        </a>
-                        <a
-                            id="downloadMp4Anchor"
-                            class="download-button"
-                            href=""
-                            target="_blank"
-                            rel="noopener"
-                            download
-                        >
-                            Download MP4
-                        </a>
-                    </div>
-                </div>
+            <div id="statusRegion" class="status-line" role="status" aria-live="polite" aria-atomic="true">
+                <span class="status-index" aria-hidden="true">[01]</span>
+                <p id="statusText">READY // Paste a supported public-media URL.</p>
             </div>
+
+            <section id="inspectionPanel" class="inspection" aria-labelledby="inspectionTitle" hidden>
+                <div class="inspection-heading">
+                    <p id="inspectionTitle" class="section-label">INSPECTION RESULT</p>
+                    <p id="engineLabel" class="engine-label"></p>
+                </div>
+                <dl class="media-facts">
+                    <div>
+                        <dt>Source</dt>
+                        <dd id="detectedSource">—</dd>
+                    </div>
+                    <div>
+                        <dt>Title</dt>
+                        <dd id="mediaTitle">—</dd>
+                    </div>
+                    <div>
+                        <dt>Duration</dt>
+                        <dd id="durationLabel">—</dd>
+                    </div>
+                </dl>
+
+                <div id="playlistBlock" class="playlist-block" hidden>
+                    <label for="playlistSelect">Choose one playlist item</label>
+                    <select id="playlistSelect">
+                        <option value="">Select an item…</option>
+                    </select>
+                    <p id="playlistNote" class="microcopy"></p>
+                </div>
+
+                <fieldset id="outputBlock" class="output-block" hidden>
+                    <legend>Choose output</legend>
+                    <div id="outputButtons" class="output-buttons"></div>
+                </fieldset>
+
+                <div id="readyBlock" class="ready-block" hidden>
+                    <div>
+                        <p class="section-label">FILE READY</p>
+                        <p id="readyMeta" class="microcopy"></p>
+                    </div>
+                    <a
+                        id="downloadAnchor"
+                        class="download-link"
+                        href=""
+                        target="_blank"
+                        rel="noopener"
+                        download
+                    >Download file</a>
+                </div>
+            </section>
+        </section>
+
+        <section class="source-section" aria-labelledby="sourcesTitle">
+            <div class="section-intro">
+                <p class="eyebrow">SPECIALIZED EXTRACTORS</p>
+                <h2 id="sourcesTitle">COMMON SOURCES</h2>
+                <p>
+                    Availability changes with each platform. Login-only, geo-blocked,
+                    paywalled and DRM-protected media are not supported.
+                    <a href="https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md">Browse the complete upstream extractor list.</a>
+                </p>
+            </div>
+            <ul class="source-grid" aria-label="Common source families">
+                <li>YouTube <span>Music / Shorts / Playlists</span></li>
+                <li>Twitch <span>VOD / Clips</span></li>
+                <li>Instagram <span>Posts / Reels / Stories</span></li>
+                <li>TikTok</li>
+                <li>Facebook</li>
+                <li>X / Twitter</li>
+                <li>Reddit</li>
+                <li>Vimeo</li>
+                <li>Dailymotion</li>
+                <li>SoundCloud</li>
+                <li>Bandcamp</li>
+                <li>Mixcloud</li>
+                <li>Bilibili</li>
+                <li>Kick</li>
+                <li>Rumble</li>
+                <li>Streamable</li>
+                <li>9GAG</li>
+                <li>Imgur</li>
+                <li>BBC / ITV</li>
+                <li>ARD / ZDF</li>
+                <li>Thousands more <span>See official list</span></li>
+            </ul>
+            <p class="spotify-note">
+                <strong>SPOTIFY // UNSUPPORTED</strong>
+                Protected tracks are not downloadable and Spotify never receives a video option.
+            </p>
+        </section>
+
+        <section class="limits-section" aria-labelledby="limitsTitle">
+            <div class="section-intro">
+                <p class="eyebrow">FREE HOST LIMITS</p>
+                <h2 id="limitsTitle">TEMPORARY BY DESIGN</h2>
+            </div>
+            <dl class="limits-list">
+                <div><dt>Known duration</dt><dd>120 min max, every mode</dd></div>
+                <div><dt>Audio conversion</dt><dd>Known duration required</dd></div>
+                <div><dt>Output size</dt><dd>216 MiB max</dd></div>
+                <div><dt>Playlist</dt><dd>Choose 1 of up to 50</dd></div>
+                <div><dt>Active livestream</dt><dd>Blocked</dd></div>
+                <div><dt>Small file expiry</dt><dd>About 10 min</dd></div>
+                <div><dt>Large file expiry</dt><dd>About 30 min</dd></div>
+            </dl>
+            <p id="legalNote" class="retention-note">
+                A completed transfer removes its server copy. Unclaimed files expire automatically;
+                cleanup timing is not an uptime guarantee.
+                <strong>Your actions, your responsibility.</strong> The owner does not authorize
+                piracy and cannot verify your rights to submitted media.
+                <a href="https://github.com/Majkey25/youtube_downloader/blob/main/USAGE_POLICY.md">Read the Usage rules before use.</a>
+            </p>
         </section>
     </main>
 
-    <footer class="footer">
-        <a href="https://majkey25.github.io/My-website-for-fun/">
-            Made by Matěj Teplý · <span id="year"></span>
-        </a>
+    <footer class="site-footer">
+        <p>MEDIA/DL // PERSONAL, LAWFUL, NON-COMMERCIAL USE ONLY</p>
+        <nav aria-label="Project links">
+            <a href="https://github.com/Majkey25/youtube_downloader/blob/main/USAGE_POLICY.md">Usage rules</a>
+            <a href="https://github.com/Majkey25/youtube_downloader">GitHub repository</a>
+            <a href="https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md">Official supported sites</a>
+        </nav>
     </footer>
 </body>
 </html>
