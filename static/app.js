@@ -6,6 +6,7 @@ const analyzeButton = document.getElementById('analyzeButton');
 const pendingSource = document.getElementById('pendingSource');
 const statusRegion = document.getElementById('statusRegion');
 const statusText = document.getElementById('statusText');
+const statusAnnouncer = document.getElementById('statusAnnouncer');
 const inspectionPanel = document.getElementById('inspectionPanel');
 const detectedSource = document.getElementById('detectedSource');
 const mediaTitle = document.getElementById('mediaTitle');
@@ -36,9 +37,30 @@ const setHidden = (element, hidden) => {
     element.hidden = hidden;
 };
 
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const TYPE_INTERVAL_MS = 14;
+let typeTimer = 0;
+
 const setStatus = (message, tone = 'idle') => {
-    statusText.textContent = message;
     statusRegion.dataset.tone = tone;
+    // Assistive tech reads the whole message at once; only the visible copy types.
+    statusAnnouncer.textContent = message;
+    clearInterval(typeTimer);
+
+    if (reducedMotion.matches) {
+        statusText.textContent = message;
+        return;
+    }
+
+    let typed = 0;
+    statusText.textContent = '';
+    typeTimer = setInterval(() => {
+        typed += 1;
+        statusText.textContent = message.slice(0, typed);
+        if (typed >= message.length) {
+            clearInterval(typeTimer);
+        }
+    }, TYPE_INTERVAL_MS);
 };
 
 const setBusy = (busy, message = '') => {
@@ -324,6 +346,8 @@ window.addEventListener('beforeunload', () => {
         void deleteFile(state.file, true);
     }
 });
+
+setStatus('READY // Paste a supported public-media URL.', 'idle');
 
 if (backendIsMissing) {
     setStatus('ERROR // Download backend is not configured for this Pages build.', 'error');
