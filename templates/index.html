@@ -42,7 +42,7 @@
                     inputmode="url"
                     maxlength="2048"
                     spellcheck="false"
-                    aria-describedby="statusText legalNote"
+                    aria-describedby="statusAnnouncer legalNote"
                     required
                 >
                 <button id="analyzeButton" class="action-button" type="submit">
@@ -51,10 +51,17 @@
             </div>
         </form>
 
-        <div id="statusRegion" class="status-line" role="status" aria-live="polite" aria-atomic="true">
-            <span class="status-index" aria-hidden="true">[01]</span>
-            <p id="statusText">READY // Paste a supported public-media URL.</p>
-        </div>
+        <p id="statusRegion" class="status-line" data-tone="idle">
+            <span class="status-prompt" aria-hidden="true">&gt;</span>
+            <span id="statusText" aria-hidden="true"></span>
+            <span
+                id="statusAnnouncer"
+                class="visually-hidden"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+            ></span>
+        </p>
 
         <section id="inspectionPanel" class="inspection" aria-labelledby="inspectionTitle" hidden>
             <div class="inspection-heading">
