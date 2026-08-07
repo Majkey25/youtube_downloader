@@ -58,7 +58,7 @@ VIDEO_ID_PATTERN = re.compile(r"[A-Za-z0-9_-]{11}")
 GENERATED_FILE_PATTERN = re.compile(r"yt-download-.+-[0-9a-f]{32}\.(?:mp3|mp4)")
 GENERATED_ARTIFACT_PATTERN = re.compile(r"yt-download-.+-[0-9a-f]{32}\..+")
 MAX_DELETE_FILES = 2
-# ponytail: format 18 limits quality to 360p; raise with the free-host limits.
+# ponytail: youtube-dl DASH is broken; use format 18 until #33244 closes.
 PROGRESSIVE_MP4_FORMAT = "18"
 # ponytail: one in-process job protects local disk.
 # Add an external queue before adding workers.
@@ -108,7 +108,6 @@ def extract_title(link: str) -> str:
             "max_filesize": MAX_MEDIA_BYTES,
             "noplaylist": True,
             "retries": MAX_RETRIES,
-            "youtube_player_js_variant": "actual",
         }
     ) as client:
         info = client.extract_info(link, download=False)
@@ -145,7 +144,6 @@ def download_media(link: str) -> dict[str, str]:
                 "max_filesize": MAX_MEDIA_BYTES,
                 "noplaylist": True,
                 "retries": MAX_RETRIES,
-                "youtube_player_js_variant": "actual",
                 "outtmpl": str(DOWNLOAD_PATH / f"{title_stem}.%(ext)s"),
                 "format": PROGRESSIVE_MP4_FORMAT,
                 "keepvideo": True,

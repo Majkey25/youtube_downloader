@@ -11,7 +11,7 @@ Use it only for media you own or have permission to download.
 - Python 3.10+
 - `ffmpeg` and `ffprobe` on `PATH`
 
-`youtube-dl` is pinned to the exact commit from [upstream PR #33246](https://github.com/ytdl-org/youtube-dl/pull/33246), which adds the current Android VR client. Downloads use format 18 (360p MP4) to stay within free-host storage and bandwidth limits.
+`youtube-dl` is pinned to an upstream Git commit because the latest PyPI release is outdated. Downloads use its compatible format 18 (360p MP4) while [upstream DASH downloads are broken](https://github.com/ytdl-org/youtube-dl/issues/33244).
 
 ## Run locally
 
