@@ -416,7 +416,7 @@ select {
 }
 
 .site-footer {
-    padding: 12px var(--page-gutter);
+    padding: 8px var(--page-gutter);
     background: var(--ink);
     color: var(--inverse-quiet);
     font-size: 11px;
@@ -426,9 +426,14 @@ select {
 .footer-meta {
     display: flex;
     flex-wrap: wrap;
-    align-items: baseline;
-    gap: 4px 18px;
+    align-items: center;
+    gap: 2px 18px;
     margin: 0;
+}
+
+/* Every item gets the same box, so the credit cannot sit off the links. */
+.footer-meta > * {
+    padding: 3px 0;
 }
 
 .site-footer strong {
@@ -436,11 +441,9 @@ select {
 }
 
 .site-footer a {
-    display: inline-block;
-    padding: 4px 0;
     color: var(--accent-soft);
     font-weight: 700;
-    text-underline-offset: 4px;
+    text-underline-offset: 2px;
 }
 
 .site-footer a:hover {
