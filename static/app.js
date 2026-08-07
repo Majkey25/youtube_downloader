@@ -22,7 +22,6 @@ const downloadAnchor = document.getElementById('downloadAnchor');
 const themeToggle = document.getElementById('themeToggle');
 const themeLabel = document.getElementById('themeLabel');
 const themeColor = document.querySelector('meta[name="theme-color"]');
-const darkPreference = matchMedia('(prefers-color-scheme: dark)');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 let savedTheme = null;
@@ -48,10 +47,8 @@ const applyTheme = (theme, persist = false) => {
     }
 };
 
-const initialTheme = savedTheme === 'light' || savedTheme === 'dark'
-    ? savedTheme
-    : darkPreference.matches ? 'dark' : 'light';
-applyTheme(initialTheme);
+// Light is the default; dark is opt-in and only sticks once chosen here.
+applyTheme(savedTheme === 'dark' ? 'dark' : 'light');
 
 const configuredApiBase = typeof APP_CONFIG === 'object' ? APP_CONFIG.apiBaseUrl : '';
 const normalizedBase = typeof configuredApiBase === 'string'

@@ -69,6 +69,15 @@ a {
     display: none !important;
 }
 
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
 .skip-link {
     position: fixed;
     z-index: 110;
@@ -138,12 +147,12 @@ a {
     margin: 0 auto;
     padding: clamp(40px, 8vh, 90px) var(--page-gutter) clamp(56px, 9vh, 110px);
     display: grid;
+    align-content: center;
     gap: 18px;
 }
 
 .section-label,
 .engine-label,
-.field-heading,
 .status-line,
 .microcopy,
 .retention-note,
@@ -158,36 +167,7 @@ a {
     letter-spacing: 0.12em;
 }
 
-h1,
 p {
-    overflow-wrap: anywhere;
-}
-
-h1 {
-    margin: 0;
-    font-size: clamp(40px, 9vw, 72px);
-    font-weight: 900;
-    letter-spacing: -0.075em;
-    line-height: 0.9;
-}
-
-.field-heading {
-    min-height: 32px;
-    display: flex;
-    align-items: start;
-    justify-content: space-between;
-    gap: 20px;
-    margin-bottom: 9px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
-.field-heading output {
-    max-width: 55%;
-    color: var(--quiet);
-    text-align: right;
     overflow-wrap: anywhere;
 }
 
@@ -476,32 +456,36 @@ select {
 
 .retention-note {
     margin: 0;
-    color: var(--quiet);
+    color: var(--inverse-quiet);
     font-size: 11px;
     line-height: 1.55;
 }
 
-.retention-note strong {
-    color: var(--ink);
+.retention-note strong,
+.retention-note a {
+    color: var(--paper);
 }
 
 .retention-note a {
-    color: var(--ink);
     font-weight: 700;
     text-underline-offset: 4px;
 }
 
 .site-footer {
-    min-height: 126px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 32px;
+    display: grid;
+    gap: 22px;
     padding: 28px var(--page-gutter);
     background: var(--ink);
     color: var(--paper);
     font-size: 11px;
     line-height: 1.5;
+}
+
+.footer-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
 }
 
 .site-footer p {
@@ -600,7 +584,7 @@ select {
 
     .inspection-heading,
     .ready-block,
-    .site-footer {
+    .footer-main {
         align-items: stretch;
         flex-direction: column;
         gap: 12px;
