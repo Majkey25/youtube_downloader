@@ -2882,6 +2882,10 @@ class AppTest(unittest.TestCase):
     def test_api_and_download_responses_are_private_no_store(self) -> None:
         denied = self.client.post("/inspect", json={"url": YOUTUBE_URL})
         self.assertEqual(
+            denied.headers.get("Strict-Transport-Security"),
+            "max-age=31536000",
+        )
+        self.assertEqual(
             denied.headers.get("Cache-Control"),
             "private, no-store, max-age=0",
         )
