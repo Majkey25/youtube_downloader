@@ -2481,6 +2481,20 @@ class AppTest(unittest.TestCase):
         response.close()
         self.assertTrue(ready.exists())
 
+    def test_generated_file_lock_uses_writable_handle(self) -> None:
+        generated = target.DOWNLOAD_PATH / f"yt-download-lock-{'a' * 32}.mp4"
+        generated.write_bytes(b"media")
+
+        handle = target._open_locked(generated)
+
+        self.assertIsNotNone(handle)
+        assert handle is not None
+        try:
+            self.assertTrue(handle.writable())
+        finally:
+            target._close_locked(handle)
+        self.assertEqual(generated.read_bytes(), b"media")
+
     def test_reserves_capacity_and_removes_abandoned_partial(self) -> None:
         for extension in ("mp3", "mp4"):
             target_file = (
