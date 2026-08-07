@@ -416,24 +416,19 @@ select {
 }
 
 .site-footer {
-    display: grid;
-    gap: 8px;
-    padding: 18px var(--page-gutter);
+    padding: 12px var(--page-gutter);
     background: var(--ink);
     color: var(--inverse-quiet);
     font-size: 11px;
     line-height: 1.5;
 }
 
-.site-footer p {
-    max-width: 96ch;
-    margin: 0;
-}
-
 .footer-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px 10px;
+    align-items: baseline;
+    gap: 4px 18px;
+    margin: 0;
 }
 
 .site-footer strong {
