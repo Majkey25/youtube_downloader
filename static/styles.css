@@ -4,19 +4,15 @@
     --ink: #090909;
     --quiet: #666663;
     --line: #090909;
-    --error: #090909;
+    /* Both accents clear 4.5:1 where they are used: --accent carries white text
+       and sits on paper, --accent-soft only appears on the dark footer. */
+    --accent: #2b4ae8;
+    --accent-soft: #7f97ff;
+    --on-accent: #ffffff;
+    --on-accent-quiet: #d5ddff;
+    --error: #c0341a;
     --inverse-quiet: #c5c5c1;
     --page-gutter: clamp(18px, 4vw, 64px);
-}
-
-:root[data-theme="dark"] {
-    color-scheme: dark;
-    --paper: #090909;
-    --ink: #f5f5f2;
-    --quiet: #a5a5a1;
-    --line: #f5f5f2;
-    --error: #f5f5f2;
-    --inverse-quiet: #50504d;
 }
 
 * {
@@ -114,31 +110,8 @@ a {
 }
 
 .brand-slash {
+    color: var(--accent);
     font-weight: 400;
-}
-
-.theme-toggle {
-    --button-bg: var(--paper);
-    --button-fg: var(--ink);
-    --button-hover-bg: var(--ink);
-    --button-hover-fg: var(--paper);
-    min-width: 132px;
-    min-height: 75px;
-    gap: 16px;
-    border: 0;
-    border-left: 1px solid var(--line);
-    font-family: "Courier New", Courier, monospace;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-}
-
-.theme-icon {
-    width: 14px;
-    height: 14px;
-    flex: 0 0 auto;
-    border: 1px solid currentColor;
-    background: linear-gradient(90deg, currentColor 0 50%, transparent 50%);
 }
 
 #workspace {
@@ -155,7 +128,6 @@ a {
 .engine-label,
 .status-line,
 .microcopy,
-.retention-note,
 .site-footer {
     font-family: "Courier New", Courier, monospace;
 }
@@ -202,8 +174,7 @@ input[type="url"]::placeholder {
 
 .action-button,
 .output-button,
-.download-link,
-.theme-toggle {
+.download-link {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -223,17 +194,12 @@ input[type="url"]::placeholder {
 }
 
 .action-button {
-    --button-bg: var(--ink);
-    --button-fg: var(--paper);
+    --button-bg: var(--accent);
+    --button-fg: var(--on-accent);
     --button-hover-bg: var(--paper);
-    --button-hover-fg: var(--ink);
+    --button-hover-fg: var(--accent);
     min-width: 146px;
-}
-
-.theme-toggle {
-    justify-content: space-between;
-    padding: 0 22px;
-    font-size: 11px;
+    border-color: var(--accent);
 }
 
 .action-button:hover:not(:disabled),
@@ -241,16 +207,13 @@ input[type="url"]::placeholder {
 .output-button:hover:not(:disabled),
 .output-button:focus-visible:not(:disabled),
 .download-link:hover,
-.download-link:focus-visible,
-.theme-toggle:hover,
-.theme-toggle:focus-visible {
+.download-link:focus-visible {
     background-color: var(--button-hover-bg);
     color: var(--button-hover-fg);
 }
 
 .action-button:active:not(:disabled),
-.output-button:active:not(:disabled),
-.theme-toggle:active {
+.output-button:active:not(:disabled) {
     transform: translateY(1px);
 }
 
@@ -262,7 +225,7 @@ input:disabled {
 }
 
 :focus-visible {
-    outline: 3px solid var(--ink);
+    outline: 3px solid var(--accent);
     outline-offset: 4px;
 }
 
@@ -283,8 +246,9 @@ input:disabled {
 }
 
 .status-line[data-tone="busy"] {
-    background: var(--ink);
-    color: var(--paper);
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--on-accent);
 }
 
 .status-line[data-tone="error"] {
@@ -297,6 +261,11 @@ input:disabled {
     display: grid;
     place-items: center;
     border-right: 1px solid currentColor;
+    color: var(--accent);
+}
+
+.status-line[data-tone="busy"] .status-index {
+    color: inherit;
 }
 
 .status-line p {
@@ -420,83 +389,63 @@ select {
 .output-button {
     --button-bg: var(--paper);
     --button-fg: var(--ink);
-    --button-hover-bg: var(--ink);
-    --button-hover-fg: var(--paper);
+    --button-hover-bg: var(--accent);
+    --button-hover-fg: var(--on-accent);
     min-width: 0;
 }
 
 .ready-block {
     padding: 18px;
     border-bottom: 0;
-    background: var(--ink);
-    color: var(--paper);
+    background: var(--accent);
+    color: var(--on-accent);
 }
 
 .ready-block .microcopy {
-    color: var(--inverse-quiet);
+    color: var(--on-accent-quiet);
 }
 
 .download-link {
-    --button-bg: var(--ink);
-    --button-fg: var(--paper);
-    --button-hover-bg: var(--paper);
-    --button-hover-fg: var(--ink);
+    --button-bg: var(--accent);
+    --button-fg: var(--on-accent);
+    --button-hover-bg: var(--on-accent);
+    --button-hover-fg: var(--accent);
     min-width: 178px;
-    border-color: var(--paper);
-    color: var(--paper);
+    border-color: var(--on-accent);
     text-decoration: none;
-}
-
-.retention-note {
-    margin: 0;
-    color: var(--inverse-quiet);
-    font-size: 11px;
-    line-height: 1.55;
-}
-
-.retention-note strong,
-.retention-note a {
-    color: var(--paper);
-}
-
-.retention-note a {
-    font-weight: 700;
-    text-underline-offset: 4px;
 }
 
 .site-footer {
     display: grid;
-    gap: 22px;
-    padding: 28px var(--page-gutter);
+    gap: 8px;
+    padding: 18px var(--page-gutter);
     background: var(--ink);
-    color: var(--paper);
+    color: var(--inverse-quiet);
     font-size: 11px;
     line-height: 1.5;
 }
 
-.footer-main {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 32px;
-}
-
 .site-footer p {
+    max-width: 96ch;
     margin: 0;
 }
 
-.site-footer nav {
+.footer-meta {
     display: flex;
     flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: 12px 24px;
+    gap: 4px 10px;
+}
+
+.site-footer strong {
+    color: var(--paper);
 }
 
 .site-footer a {
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-    text-underline-offset: 5px;
+    display: inline-block;
+    padding: 4px 0;
+    color: var(--accent-soft);
+    font-weight: 700;
+    text-underline-offset: 4px;
 }
 
 .site-footer a:hover {
@@ -509,13 +458,6 @@ select {
     }
 }
 
-/* No custom view transition: the browser's default cross-fade is shorter and
-   calmer than a full-page wipe on every theme toggle. */
-::view-transition-old(root),
-::view-transition-new(root) {
-    animation-duration: 180ms;
-}
-
 @media (max-width: 620px) {
     .site-header {
         min-height: 64px;
@@ -524,13 +466,6 @@ select {
     .brand {
         padding-right: 12px;
         font-size: 24px;
-    }
-
-    .theme-toggle {
-        min-width: 108px;
-        min-height: 63px;
-        gap: 12px;
-        padding: 0 16px;
     }
 
     .input-row {
@@ -564,8 +499,7 @@ select {
     }
 
     .inspection-heading,
-    .ready-block,
-    .footer-main {
+    .ready-block {
         align-items: stretch;
         flex-direction: column;
         gap: 12px;
@@ -577,12 +511,6 @@ select {
 
     .download-link {
         width: 100%;
-    }
-
-    .site-footer nav {
-        flex-direction: column;
-        justify-content: flex-start;
-        gap: 0;
     }
 }
 
