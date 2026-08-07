@@ -31,8 +31,10 @@ html {
 }
 
 body {
-    min-height: 100vh;
+    min-height: 100svh;
     margin: 0;
+    display: flex;
+    flex-direction: column;
     overflow-x: hidden;
     background: var(--paper);
     color: var(--ink);
@@ -67,16 +69,6 @@ a {
     display: none !important;
 }
 
-.page-wipe {
-    position: fixed;
-    z-index: 100;
-    inset: 0;
-    pointer-events: none;
-    background: var(--ink);
-    transform-origin: right;
-    animation: page-wipe 650ms cubic-bezier(0.76, 0, 0.24, 1) forwards;
-}
-
 .skip-link {
     position: fixed;
     z-index: 110;
@@ -101,7 +93,7 @@ a {
 }
 
 .brand {
-    min-width: 210px;
+    min-width: 0;
     display: inline-flex;
     align-items: center;
     padding: 0 var(--page-gutter);
@@ -114,23 +106,6 @@ a {
 
 .brand-slash {
     font-weight: 400;
-}
-
-.site-controls {
-    display: flex;
-}
-
-.engine-status {
-    min-width: 164px;
-    display: grid;
-    place-items: center;
-    margin: 0;
-    padding: 0 24px;
-    border-left: 1px solid var(--line);
-    font-family: "Courier New", Courier, monospace;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
 }
 
 .theme-toggle {
@@ -157,85 +132,15 @@ a {
     background: linear-gradient(90deg, currentColor 0 50%, transparent 50%);
 }
 
-.source-ticker {
-    height: 48px;
+#workspace {
+    width: min(100%, 720px);
+    flex: 1;
+    margin: 0 auto;
+    padding: clamp(40px, 8vh, 90px) var(--page-gutter) clamp(56px, 9vh, 110px);
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    border-bottom: 1px solid var(--line);
-    outline-offset: -3px;
+    gap: 18px;
 }
 
-.ticker-label {
-    z-index: 1;
-    display: grid;
-    place-items: center;
-    margin: 0;
-    padding: 0 var(--page-gutter);
-    border-right: 1px solid var(--line);
-    background: var(--ink);
-    color: var(--paper);
-    font-family: "Courier New", Courier, monospace;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    white-space: nowrap;
-}
-
-.ticker-window {
-    min-width: 0;
-    overflow: hidden;
-}
-
-.ticker-track,
-.ticker-group {
-    display: flex;
-    width: max-content;
-    height: 100%;
-    align-items: center;
-}
-
-.ticker-track {
-    animation: ticker 36s linear infinite;
-    will-change: transform;
-}
-
-.ticker-group {
-    flex-shrink: 0;
-}
-
-.ticker-group span {
-    display: inline-flex;
-    align-items: center;
-    align-self: stretch;
-    padding: 0 clamp(24px, 3vw, 48px);
-    border-right: 1px solid var(--line);
-    font-size: 13px;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    white-space: nowrap;
-}
-
-.source-ticker:hover .ticker-track,
-.source-ticker:focus .ticker-track {
-    animation-play-state: paused;
-}
-
-.workbench {
-    min-height: calc(100svh - 124px);
-    display: grid;
-    align-content: center;
-    grid-template-columns: minmax(240px, 0.72fr) minmax(440px, 1.28fr);
-    column-gap: clamp(36px, 7vw, 120px);
-    row-gap: 18px;
-    padding: clamp(54px, 9vh, 120px) var(--page-gutter);
-    border-bottom: 1px solid var(--line);
-}
-
-.workbench-heading {
-    align-self: start;
-}
-
-.eyebrow,
 .section-label,
 .engine-label,
 .field-heading,
@@ -246,7 +151,6 @@ a {
     font-family: "Courier New", Courier, monospace;
 }
 
-.eyebrow,
 .section-label {
     margin: 0 0 18px;
     font-size: 11px;
@@ -255,39 +159,16 @@ a {
 }
 
 h1,
-h2,
 p {
     overflow-wrap: anywhere;
 }
 
-h1,
-h2 {
+h1 {
     margin: 0;
+    font-size: clamp(40px, 9vw, 72px);
     font-weight: 900;
     letter-spacing: -0.075em;
     line-height: 0.9;
-}
-
-h1 {
-    max-width: 720px;
-    font-size: clamp(48px, 7vw, 112px);
-}
-
-h2 {
-    font-size: clamp(42px, 6vw, 88px);
-}
-
-.lede,
-.section-intro > p:last-child {
-    max-width: 620px;
-    margin: 26px 0 0;
-    color: var(--quiet);
-    font-size: clamp(16px, 1.5vw, 20px);
-    line-height: 1.55;
-}
-
-.inspect-form {
-    align-self: start;
 }
 
 .field-heading {
@@ -330,7 +211,8 @@ input[type="url"] {
     border-right: 0;
     background: transparent;
     font-family: "Courier New", Courier, monospace;
-    font-size: 14px;
+    /* 16px keeps iOS Safari from zooming the page on focus. */
+    font-size: 16px;
 }
 
 input[type="url"]::placeholder {
@@ -417,12 +299,10 @@ input:disabled {
 }
 
 .status-line {
-    grid-column: 2;
     min-height: 58px;
     display: grid;
     grid-template-columns: 48px 1fr;
     align-items: center;
-    margin-top: 0;
     border: 1px solid var(--line);
     font-size: 12px;
     letter-spacing: 0.03em;
@@ -452,7 +332,6 @@ input:disabled {
 }
 
 .inspection {
-    grid-column: 2;
     border: 1px solid var(--line);
     animation: reveal 180ms ease both;
 }
@@ -481,12 +360,8 @@ input:disabled {
     text-transform: uppercase;
 }
 
-.media-facts,
-.limits-list {
-    margin: 0;
-}
-
 .media-facts {
+    margin: 0;
     display: grid;
     grid-template-columns: 0.75fr 1.75fr 0.65fr;
 }
@@ -501,8 +376,7 @@ input:disabled {
     border-right: 0;
 }
 
-.media-facts dt,
-.limits-list dt {
+.media-facts dt {
     margin-bottom: 8px;
     color: var(--quiet);
     font-family: "Courier New", Courier, monospace;
@@ -512,8 +386,7 @@ input:disabled {
     text-transform: uppercase;
 }
 
-.media-facts dd,
-.limits-list dd {
+.media-facts dd {
     margin: 0;
     font-size: 15px;
     font-weight: 700;
@@ -601,91 +474,7 @@ select {
     text-decoration: none;
 }
 
-.source-section,
-.limits-section {
-    display: grid;
-    grid-template-columns: minmax(260px, 0.72fr) minmax(0, 1.28fr);
-    column-gap: clamp(36px, 7vw, 120px);
-    row-gap: 18px;
-    padding: clamp(72px, 10vw, 150px) var(--page-gutter);
-    border-bottom: 1px solid var(--line);
-}
-
-.source-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    align-self: start;
-    margin: 0;
-    padding: 0;
-    border-top: 1px solid var(--line);
-    border-left: 1px solid var(--line);
-    list-style: none;
-}
-
-.source-grid li {
-    min-height: 78px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 4px;
-    padding: 16px;
-    border-right: 1px solid var(--line);
-    border-bottom: 1px solid var(--line);
-    font-size: clamp(16px, 1.5vw, 22px);
-    font-weight: 900;
-    letter-spacing: -0.04em;
-}
-
-.source-grid span {
-    color: var(--quiet);
-    font-family: "Courier New", Courier, monospace;
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
-.spotify-note {
-    grid-column: 2;
-    margin: 0;
-    padding: 18px;
-    border: 1px solid var(--line);
-    font-size: 13px;
-    line-height: 1.55;
-}
-
-.spotify-note strong {
-    display: block;
-    margin-bottom: 4px;
-    font-family: "Courier New", Courier, monospace;
-    font-size: 11px;
-    letter-spacing: 0.08em;
-}
-
-.limits-list {
-    border-top: 1px solid var(--line);
-}
-
-.limits-list > div {
-    min-height: 68px;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 24px;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--line);
-}
-
-.limits-list dt {
-    margin: 0;
-}
-
-.limits-list dd {
-    text-align: right;
-}
-
 .retention-note {
-    grid-column: 2;
     margin: 0;
     color: var(--quiet);
     font-size: 11px;
@@ -737,22 +526,10 @@ select {
     text-decoration-thickness: 2px;
 }
 
-@keyframes page-wipe {
-    to {
-        transform: scaleX(0);
-    }
-}
-
 @keyframes reveal {
     from {
         opacity: 0;
         transform: translateY(8px);
-    }
-}
-
-@keyframes ticker {
-    to {
-        transform: translate3d(-50%, 0, 0);
     }
 }
 
@@ -774,43 +551,14 @@ select {
     animation: theme-reveal 540ms cubic-bezier(0.76, 0, 0.24, 1) both;
 }
 
-@media (max-width: 900px) {
-    .engine-status {
-        min-width: 140px;
-        padding: 0 16px;
-    }
-
-    .workbench,
-    .source-section,
-    .limits-section {
-        grid-template-columns: 1fr;
-    }
-
-    .inspection,
-    .status-line,
-    .spotify-note,
-    .retention-note {
-        grid-column: 1;
-    }
-
-    .source-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
 @media (max-width: 620px) {
     .site-header {
         min-height: 64px;
     }
 
     .brand {
-        min-width: auto;
         padding-right: 12px;
         font-size: 24px;
-    }
-
-    .engine-status {
-        display: none;
     }
 
     .theme-toggle {
@@ -818,40 +566,6 @@ select {
         min-height: 63px;
         gap: 12px;
         padding: 0 16px;
-    }
-
-    .source-ticker {
-        height: 44px;
-        grid-template-columns: auto minmax(0, 1fr);
-    }
-
-    .ticker-label {
-        max-width: 96px;
-        padding: 0 12px;
-        font-size: 8px;
-        text-align: center;
-        white-space: normal;
-    }
-
-    .ticker-group span {
-        padding: 0 22px;
-        font-size: 12px;
-    }
-
-    .workbench {
-        min-height: calc(100svh - 108px);
-        padding-top: 42px;
-        padding-bottom: 42px;
-    }
-
-    .source-section,
-    .limits-section {
-        padding-top: 64px;
-        padding-bottom: 64px;
-    }
-
-    h1 {
-        font-size: clamp(46px, 15.5vw, 72px);
     }
 
     .input-row {
@@ -884,31 +598,20 @@ select {
         grid-template-columns: 1fr;
     }
 
+    .inspection-heading,
     .ready-block,
     .site-footer {
         align-items: stretch;
         flex-direction: column;
+        gap: 12px;
+    }
+
+    .engine-label {
+        text-align: left;
     }
 
     .download-link {
         width: 100%;
-    }
-
-    .source-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .source-grid li {
-        min-height: 64px;
-    }
-
-    .limits-list > div {
-        grid-template-columns: 1fr;
-        gap: 5px;
-    }
-
-    .limits-list dd {
-        text-align: left;
     }
 
     .site-footer nav {
@@ -928,17 +631,5 @@ select {
     *::after {
         animation: none !important;
         transition: none !important;
-    }
-
-    .page-wipe {
-        display: none;
-    }
-
-    .ticker-window {
-        overflow-x: auto;
-    }
-
-    .ticker-copy {
-        display: none;
     }
 }
