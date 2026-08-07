@@ -37,13 +37,9 @@
     </header>
 
     <main id="workspace">
-        <h1 id="page-title">Paste a link.</h1>
-
         <form id="inspectForm" class="inspect-form">
-            <div class="field-heading">
-                <label for="mediaUrl">Public media URL</label>
-                <output id="pendingSource" for="mediaUrl">WAITING FOR LINK</output>
-            </div>
+            <label class="visually-hidden" for="mediaUrl">Public media URL</label>
+            <output class="visually-hidden" id="pendingSource" for="mediaUrl">WAITING FOR LINK</output>
             <div class="input-row">
                 <input
                     id="mediaUrl"
@@ -116,7 +112,20 @@
                 >Download file</a>
             </div>
         </section>
+    </main>
 
+    <footer class="site-footer">
+        <div class="footer-main">
+            <p>
+                MEDIA/DL // PERSONAL, LAWFUL, NON-COMMERCIAL USE ONLY<br>
+                MADE BY MAJKEY (MATĚJ TEPLÝ)
+            </p>
+            <nav aria-label="Project links">
+                <a href="https://github.com/Majkey25/youtube_downloader/blob/main/USAGE_POLICY.md">Usage rules</a>
+                <a href="https://github.com/Majkey25/youtube_downloader">GitHub repository</a>
+                <a href="https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md">Supported sites</a>
+            </nav>
+        </div>
         <p id="legalNote" class="retention-note">
             Limits: 120 min, 216 MiB, one item per playlist, no livestreams. Files
             expire on their own and a completed transfer removes the server copy.
@@ -125,15 +134,6 @@
             does not authorize piracy and cannot verify your rights to submitted media.
             <a href="https://github.com/Majkey25/youtube_downloader/blob/main/USAGE_POLICY.md">Read the Usage rules before use.</a>
         </p>
-    </main>
-
-    <footer class="site-footer">
-        <p>MEDIA/DL // PERSONAL, LAWFUL, NON-COMMERCIAL USE ONLY</p>
-        <nav aria-label="Project links">
-            <a href="https://github.com/Majkey25/youtube_downloader/blob/main/USAGE_POLICY.md">Usage rules</a>
-            <a href="https://github.com/Majkey25/youtube_downloader">GitHub repository</a>
-            <a href="https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md">Supported sites</a>
-        </nav>
     </footer>
 </body>
 </html>
