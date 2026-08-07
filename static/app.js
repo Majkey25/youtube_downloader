@@ -19,36 +19,6 @@ const outputButtons = document.getElementById('outputButtons');
 const readyBlock = document.getElementById('readyBlock');
 const readyMeta = document.getElementById('readyMeta');
 const downloadAnchor = document.getElementById('downloadAnchor');
-const themeToggle = document.getElementById('themeToggle');
-const themeLabel = document.getElementById('themeLabel');
-const themeColor = document.querySelector('meta[name="theme-color"]');
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-
-let savedTheme = null;
-try {
-    savedTheme = localStorage.getItem('media-dl-theme');
-} catch {
-    // The system preference remains available when browser storage is blocked.
-}
-
-const applyTheme = (theme, persist = false) => {
-    const dark = theme === 'dark';
-    const nextTheme = dark ? 'light' : 'dark';
-    document.documentElement.dataset.theme = theme;
-    themeToggle.setAttribute('aria-label', `Switch to ${nextTheme} theme`);
-    themeLabel.textContent = nextTheme.toUpperCase();
-    themeColor?.setAttribute('content', dark ? '#090909' : '#f5f5f2');
-    if (persist) {
-        try {
-            localStorage.setItem('media-dl-theme', theme);
-        } catch {
-            // Theme persistence is optional; the active theme still works.
-        }
-    }
-};
-
-// Light is the default; dark is opt-in and only sticks once chosen here.
-applyTheme(savedTheme === 'dark' ? 'dark' : 'light');
 
 const configuredApiBase = typeof APP_CONFIG === 'object' ? APP_CONFIG.apiBaseUrl : '';
 const normalizedBase = typeof configuredApiBase === 'string'
@@ -349,16 +319,6 @@ playlistSelect.addEventListener('change', () => void inspectPlaylistItem());
 downloadAnchor.addEventListener('click', () => {
     state.file = null;
 });
-themeToggle.addEventListener('click', () => {
-    const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-    const update = () => applyTheme(theme, true);
-    if (typeof document.startViewTransition === 'function' && !reducedMotion.matches) {
-        document.startViewTransition(update);
-    } else {
-        update();
-    }
-});
-
 window.addEventListener('beforeunload', () => {
     if (state.file) {
         void deleteFile(state.file, true);
