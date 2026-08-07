@@ -1428,7 +1428,7 @@ def _unlock_file(handle: BinaryIO) -> None:
 
 def _open_locked(target: Path) -> BinaryIO | None:
     try:
-        handle = target.open("rb")
+        handle = target.open("r+b")
     except OSError:
         return None
     if not _try_lock_file(handle):
