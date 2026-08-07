@@ -34,7 +34,8 @@ jobs:
           cp templates/index.html site/index.html
           cp -r static/* site/static/
           cp site/static/service-worker.js site/service-worker.js
-          sed -i "s|__API_BASE_URL__|${API_BASE_URL:-}|g" site/static/config.js
+          sed -i "s|__API_BASE_URL__|${API_BASE_URL:-}|g" \
+            site/index.html site/static/config.js
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

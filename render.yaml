@@ -11,17 +11,33 @@ services:
         value: https://majkey25.github.io
       - key: DOWNLOAD_DIR
         value: /tmp/youtube-downloads
+      - key: TRUST_PROXY_HEADERS
+        value: "1"
+      - key: TRUST_X_REAL_IP
+        value: "0"
       - key: MAX_DURATION_SECONDS
-        value: "600"
+        value: "7200"
       - key: MAX_MEDIA_BYTES
-        value: "134217728"
+        value: "226492416"
       - key: MAX_STORED_BYTES
-        value: "536870912"
+        value: "679477248"
+      - key: JOB_TIMEOUT_SECONDS
+        value: "900"
+      - key: JOB_MEMORY_BYTES
+        value: "150994944"
+      - key: MAX_HLS_MANIFEST_BYTES
+        value: "8388608"
       - key: MAX_RETRIES
         value: "2"
-      - key: STALE_FILE_AGE_SECONDS
-        value: "900"
+      - key: SMALL_FILE_MAX_BYTES
+        value: "67108864"
+      - key: SMALL_FILE_TTL_SECONDS
+        value: "600"
+      - key: LARGE_FILE_TTL_SECONDS
+        value: "1800"
       - key: RATE_LIMIT_REQUESTS
         value: "5"
       - key: RATE_LIMIT_WINDOW_SECONDS
         value: "3600"
+      - key: GLOBAL_RATE_LIMIT_REQUESTS
+        value: "60"
