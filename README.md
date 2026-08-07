@@ -1,9 +1,8 @@
 # YouTube Downloader
 
-> [!WARNING]
-> This project is deprecated and no longer maintained. The source remains available for reference.
+A small Flask + [`youtube-dl`](https://github.com/ytdl-org/youtube-dl) utility that prepares MP3 and MP4 files from a YouTube link.
 
-A small Flask + `yt-dlp` utility that prepares MP3 and MP4 files from a YouTube link.
+[Open the hosted downloader](https://majkey25.github.io/youtube_downloader/).
 
 Use it only for media you own or have permission to download.
 
@@ -12,7 +11,7 @@ Use it only for media you own or have permission to download.
 - Python 3.10+
 - `ffmpeg` and `ffprobe` on `PATH`
 
-The Python dependencies include `yt-dlp`'s default components and Deno runtime for full YouTube support.
+`youtube-dl` is pinned to an upstream Git commit because the latest PyPI release is outdated. Downloads use its compatible format 18 (360p MP4) while [upstream DASH downloads are broken](https://github.com/ytdl-org/youtube-dl/issues/33244).
 
 ## Run locally
 
@@ -59,9 +58,9 @@ GitHub Pages serves only the UI. The Flask API must run on a separate host.
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Majkey25/youtube_downloader)
 
-The included `Dockerfile` installs `ffmpeg`; `render.yaml` creates one free web service in Frankfurt.
+The included `Dockerfile` installs `ffmpeg`; `render.yaml` creates one free web service in Oregon.
 
-1. Deploy the Render Blueprint and copy its `onrender.com` URL.
+1. Deploy the backend with the included `Dockerfile` or Render Blueprint and copy its HTTPS URL.
 2. Set the backend's `ALLOWED_ORIGINS` to the exact Pages origin.
 3. Set the repository variable `API_BASE_URL` to the backend base URL.
 4. Enable GitHub Pages with **GitHub Actions** as the source.

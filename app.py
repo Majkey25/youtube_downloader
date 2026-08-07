@@ -20,8 +20,8 @@ from flask import (
     request,
     send_from_directory,
 )
-from yt_dlp import YoutubeDL
-from yt_dlp.utils import DownloadError
+from youtube_dl import YoutubeDL
+from youtube_dl.utils import DownloadError
 
 from config import (
     ALLOWED_ORIGINS,
@@ -58,6 +58,8 @@ VIDEO_ID_PATTERN = re.compile(r"[A-Za-z0-9_-]{11}")
 GENERATED_FILE_PATTERN = re.compile(r"yt-download-.+-[0-9a-f]{32}\.(?:mp3|mp4)")
 GENERATED_ARTIFACT_PATTERN = re.compile(r"yt-download-.+-[0-9a-f]{32}\..+")
 MAX_DELETE_FILES = 2
+# ponytail: youtube-dl DASH is broken; use format 18 until #33244 closes.
+PROGRESSIVE_MP4_FORMAT = "18"
 # ponytail: one in-process job protects local disk.
 # Add an external queue before adding workers.
 DOWNLOAD_SLOT = BoundedSemaphore(1)
@@ -106,9 +108,6 @@ def extract_title(link: str) -> str:
             "max_filesize": MAX_MEDIA_BYTES,
             "noplaylist": True,
             "retries": MAX_RETRIES,
-            "extractor_args": {
-                "youtube": {"player_client": ["default", "web_embedded"]}
-            },
         }
     ) as client:
         info = client.extract_info(link, download=False)
@@ -145,11 +144,9 @@ def download_media(link: str) -> dict[str, str]:
                 "max_filesize": MAX_MEDIA_BYTES,
                 "noplaylist": True,
                 "retries": MAX_RETRIES,
-                "extractor_args": {
-                    "youtube": {"player_client": ["default", "web_embedded"]}
-                },
                 "outtmpl": str(DOWNLOAD_PATH / f"{title_stem}.%(ext)s"),
-                "format": "bestaudio/best",
+                "format": PROGRESSIVE_MP4_FORMAT,
+                "keepvideo": True,
                 "postprocessors": [
                     {
                         "key": "FFmpegExtractAudio",
@@ -158,36 +155,15 @@ def download_media(link: str) -> dict[str, str]:
                     }
                 ],
             }
-        ) as audio_client:
-            audio_client.download([link])
+        ) as client:
+            client.download([link])
 
         validate_output_file(audio_path)
-
-        with YoutubeDL(
-            {
-                "quiet": True,
-                "max_filesize": MAX_MEDIA_BYTES,
-                "noplaylist": True,
-                "retries": MAX_RETRIES,
-                "extractor_args": {
-                    "youtube": {"player_client": ["default", "web_embedded"]}
-                },
-                "outtmpl": str(DOWNLOAD_PATH / f"{title_stem}.%(ext)s"),
-                "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]",
-                "merge_output_format": "mp4",
-            }
-        ) as video_client:
-            video_client.download([link])
         validate_output_file(video_path)
     except Exception:
         for target in DOWNLOAD_PATH.glob(f"{title_stem}.*"):
             target.unlink(missing_ok=True)
         raise
-
-    if not audio_path.exists() or not video_path.exists():
-        for target in DOWNLOAD_PATH.glob(f"{title_stem}.*"):
-            target.unlink(missing_ok=True)
-        raise FileNotFoundError("Expected media files were not created")
 
     return {"mp3_file": audio_name, "mp4_file": video_name}
 
@@ -250,17 +226,16 @@ def resolve_download_path(filename: str) -> Path | None:
 def request_origin_is_allowed() -> bool:
     origin = request.headers.get("Origin")
     if not origin:
-        return True
+        return False
     normalized = origin.rstrip("/")
     return normalized == request.host_url.rstrip("/") or normalized in ALLOWED_ORIGINS
 
 
 def request_client_id() -> str:
-    forwarded_for = request.headers.get("X-Forwarded-For")
-    if forwarded_for:
-        client_ip = forwarded_for.partition(",")[0].strip()
-        if client_ip:
-            return client_ip
+    # ponytail: Render overwrites this header; configure trusted proxies on other hosts.
+    client_ip = request.headers.get("CF-Connecting-IP", "").strip()
+    if client_ip:
+        return client_ip
     return request.remote_addr or "unknown"
 
 

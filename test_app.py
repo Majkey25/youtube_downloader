@@ -32,6 +32,11 @@ class AppTest(unittest.TestCase):
         )
 
     def test_rejects_cross_origin_and_oversized_requests(self) -> None:
+        missing_origin = self.client.post(
+            "/download", data={"youtubeLink": "https://youtu.be/jNQXAC9IVRw"}
+        )
+        self.assertEqual(missing_origin.status_code, 403)
+
         forbidden = self.client.post(
             "/download",
             data={"youtubeLink": "https://youtu.be/jNQXAC9IVRw"},
@@ -45,14 +50,23 @@ class AppTest(unittest.TestCase):
                 "youtubeLink": "https://youtu.be/jNQXAC9IVRw",
                 "padding": "x" * 20_000,
             },
+            headers={"Origin": "https://majkey25.github.io"},
         )
         self.assertEqual(oversized.status_code, 413)
         self.assertEqual(oversized.get_json(), {"error": "Request is too large."})
 
     def test_limits_download_requests_per_client(self) -> None:
         data = {"youtubeLink": "https://youtu.be/jNQXAC9IVRw"}
-        first_headers = {"X-Forwarded-For": "203.0.113.10, 10.0.0.1"}
-        second_headers = {"X-Forwarded-For": "203.0.113.10, 10.0.0.2"}
+        first_headers = {
+            "CF-Connecting-IP": "203.0.113.10",
+            "Origin": "https://majkey25.github.io",
+            "X-Forwarded-For": "198.51.100.1",
+        }
+        second_headers = {
+            "CF-Connecting-IP": "203.0.113.10",
+            "Origin": "https://majkey25.github.io",
+            "X-Forwarded-For": "198.51.100.2",
+        }
         files = {"mp3_file": "test.mp3", "mp4_file": "test.mp4"}
 
         with (
