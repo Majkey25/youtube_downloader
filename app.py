@@ -108,6 +108,7 @@ def extract_title(link: str) -> str:
             "max_filesize": MAX_MEDIA_BYTES,
             "noplaylist": True,
             "retries": MAX_RETRIES,
+            "youtube_player_js_variant": "actual",
         }
     ) as client:
         info = client.extract_info(link, download=False)
@@ -144,6 +145,7 @@ def download_media(link: str) -> dict[str, str]:
                 "max_filesize": MAX_MEDIA_BYTES,
                 "noplaylist": True,
                 "retries": MAX_RETRIES,
+                "youtube_player_js_variant": "actual",
                 "outtmpl": str(DOWNLOAD_PATH / f"{title_stem}.%(ext)s"),
                 "format": PROGRESSIVE_MP4_FORMAT,
                 "keepvideo": True,
