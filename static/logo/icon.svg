@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Download Media">
+  <rect width="512" height="512" rx="112" fill="#2b4ae8"/>
+  <g fill="none" stroke="#ffffff" stroke-width="44" stroke-linecap="butt" stroke-linejoin="miter">
+    <path d="M256 108v186"/>
+    <path d="M166 220l90 90 90-90"/>
+    <path d="M124 386h264"/>
+  </g>
+</svg>
