@@ -423,16 +423,22 @@ select {
     line-height: 1.5;
 }
 
-.footer-meta {
+.footer-meta,
+.footer-links {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 2px 18px;
+}
+
+.footer-meta {
+    justify-content: space-between;
     margin: 0;
 }
 
 /* Every item gets the same box, so the credit cannot sit off the links. */
-.footer-meta > * {
+.footer-credit,
+.footer-links a {
     padding: 3px 0;
 }
 
@@ -509,6 +515,17 @@ select {
 
     .download-link {
         width: 100%;
+    }
+
+    /* Too narrow to split left and right. Dropping the wrapper out of the box
+       tree lets all four items share rows instead of the credit taking one and
+       the links wrapping below it. */
+    .footer-meta {
+        justify-content: flex-start;
+    }
+
+    .footer-links {
+        display: contents;
     }
 }
 
