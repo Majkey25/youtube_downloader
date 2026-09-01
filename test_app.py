@@ -2086,6 +2086,21 @@ class AppTest(unittest.TestCase):
             target._wait_for_job(memory_limited, target.monotonic() + 10.0)
         terminate.assert_called_once_with(memory_limited)
 
+    def test_job_memory_monitor_tolerates_one_startup_race(self) -> None:
+        process = MagicMock(pid=12, returncode=0)
+        process.poll.side_effect = [None, None, None, 0]
+        with (
+            patch.object(target.sys, "platform", "linux"),
+            patch.object(target, "_process_group_rss_bytes", side_effect=[0, 1]),
+            patch.object(target, "_stored_bytes", return_value=0),
+            patch.object(target, "_terminate_process_tree") as terminate,
+            patch.object(target, "sleep"),
+        ):
+            target._wait_for_job(process, target.monotonic() + 10.0)
+
+        terminate.assert_not_called()
+
+    def test_job_memory_monitor_failure_kills_before_error(self) -> None:
         monitor_failed = MagicMock(pid=12)
         monitor_failed.poll.return_value = None
         with (

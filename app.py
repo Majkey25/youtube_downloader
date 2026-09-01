@@ -1846,6 +1846,7 @@ def _terminate_process_tree(process: subprocess.Popen[bytes]) -> None:
 
 
 def _wait_for_job(process: subprocess.Popen[bytes], deadline: float) -> None:
+    first_memory_sample = True
     while process.poll() is None:
         if monotonic() >= deadline:
             _terminate_process_tree(process)
@@ -1857,8 +1858,13 @@ def _wait_for_job(process: subprocess.Popen[bytes], deadline: float) -> None:
         ):
             if process.poll() is not None:
                 continue
+            if first_memory_sample:
+                first_memory_sample = False
+                sleep(JOB_POLL_SECONDS)
+                continue
             _terminate_process_tree(process)
             raise EngineError("The media operation memory monitor failed.")
+        first_memory_sample = False
         if rss_bytes is not None and rss_bytes > JOB_MEMORY_BYTES:
             _terminate_process_tree(process)
             raise EngineError("The media operation exceeded its memory limit.")
