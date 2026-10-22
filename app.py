@@ -1862,6 +1862,13 @@ def _wait_for_job(process: subprocess.Popen[bytes], deadline: float) -> None:
                 first_memory_sample = False
                 sleep(JOB_POLL_SECONDS)
                 continue
+            # Linux releases process memory before the exit becomes waitable.
+            try:
+                process.wait(timeout=JOB_POLL_SECONDS)
+            except subprocess.TimeoutExpired:
+                pass
+            else:
+                break
             _terminate_process_tree(process)
             raise EngineError("The media operation memory monitor failed.")
         first_memory_sample = False

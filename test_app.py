@@ -2208,6 +2208,9 @@ class AppTest(unittest.TestCase):
     def test_job_memory_monitor_failure_kills_before_error(self) -> None:
         monitor_failed = MagicMock(pid=12)
         monitor_failed.poll.return_value = None
+        monitor_failed.wait.side_effect = subprocess.TimeoutExpired(
+            "worker", target.JOB_POLL_SECONDS
+        )
         with (
             patch.object(target.sys, "platform", "linux"),
             patch.object(target, "_process_group_rss_bytes", return_value=None),
@@ -2216,6 +2219,24 @@ class AppTest(unittest.TestCase):
         ):
             target._wait_for_job(monitor_failed, target.monotonic() + 10.0)
         terminate.assert_called_once_with(monitor_failed)
+        monitor_failed.wait.assert_called_once_with(timeout=target.JOB_POLL_SECONDS)
+
+    def test_job_memory_monitor_waits_for_exit_after_memory_is_released(self) -> None:
+        process = MagicMock(pid=12, returncode=0)
+        process.poll.side_effect = [None, None, None, 0]
+        process.wait.return_value = 0
+        with (
+            patch.object(target.sys, "platform", "linux"),
+            patch.object(target, "_process_group_rss_bytes", side_effect=[1, 0]),
+            patch.object(target, "_stored_bytes", return_value=0),
+            patch.object(target, "_process_group_exists", return_value=False),
+            patch.object(target, "_terminate_process_tree") as terminate,
+            patch.object(target, "sleep"),
+        ):
+            target._wait_for_job(process, target.monotonic() + 10.0)
+
+        process.wait.assert_called_once_with(timeout=target.JOB_POLL_SECONDS)
+        terminate.assert_not_called()
 
     def test_job_storage_monitor_kills_on_limit_or_scan_failure(self) -> None:
         process = MagicMock(pid=13)
