@@ -4,9 +4,12 @@ import importlib
 import json
 import multiprocessing
 import os
+import shutil
 import socket
+import subprocess
 import tempfile
 import unittest
+import wave
 from collections.abc import Callable, Mapping
 from contextlib import suppress
 from pathlib import Path
@@ -56,6 +59,8 @@ class AppTest(unittest.TestCase):
         self.addCleanup(setattr, target, "DOWNLOAD_PATH", self.original_download_path)
         target.DOWNLOAD_PATH = Path(self.temp_dir.name)
         target.app.config.update(TESTING=True)
+        self.addCleanup(setattr, target, "ALLOWED_ORIGINS", target.ALLOWED_ORIGINS)
+        target.ALLOWED_ORIGINS = target.ALLOWED_ORIGINS | {"http://localhost"}
         with target.DOWNLOAD_ATTEMPTS_LOCK:
             target.DOWNLOAD_ATTEMPTS.clear()
             target.GLOBAL_OPERATION_ATTEMPTS.clear()
@@ -69,6 +74,11 @@ class AppTest(unittest.TestCase):
             target.ORPHANED_JOB_LOCKS.clear()
             target.ORPHANED_JOB_PROCESSES.clear()
         self.client: FlaskClient = target.app.test_client()
+        self.delivery_socket = socket.socket()
+        self.addCleanup(self.delivery_socket.close)
+        cast(dict[str, object], self.client.environ_base)["gunicorn.socket"] = (
+            self.delivery_socket
+        )
         self.headers = {"Origin": "http://localhost"}
 
     def tearDown(self) -> None:
@@ -249,6 +259,8 @@ class AppTest(unittest.TestCase):
                 "ffprobe",
                 "-protocol_whitelist",
                 "file,crypto,data",
+                "-format_whitelist",
+                target.MEDIA_INPUT_FORMATS,
                 "file:unsafe.mp4",
             ],
         )
@@ -260,10 +272,14 @@ class AppTest(unittest.TestCase):
                 "ffmpeg",
                 "-protocol_whitelist",
                 "file,crypto,data",
+                "-format_whitelist",
+                target.MEDIA_INPUT_FORMATS,
                 "-i",
                 "file:first",
                 "-protocol_whitelist",
                 "file,crypto,data",
+                "-format_whitelist",
+                target.MEDIA_INPUT_FORMATS,
                 "-i",
                 "file:second",
                 "file:out",
@@ -275,12 +291,18 @@ class AppTest(unittest.TestCase):
                 b"ffprobe",
                 b"-protocol_whitelist",
                 b"file,crypto,data",
+                b"-format_whitelist",
+                target.MEDIA_INPUT_FORMATS.encode(),
                 b"file:unsafe.mp4",
             ],
         )
-        with self.assertRaisesRegex(target.EngineError, "protocol policy"):
+        with self.assertRaisesRegex(target.EngineError, "input policy"):
             target.guard_media_command(
                 ["ffprobe", "-protocol_whitelist=http,file", "file:unsafe.mp4"]
+            )
+        with self.assertRaisesRegex(target.EngineError, "input policy"):
+            target.guard_media_command(
+                [b"ffprobe", b"-format_whitelist=concat", b"file:unsafe.mp4"]
             )
         with self.assertRaisesRegex(target.EngineError, "PhantomJS"):
             target.guard_media_command(["phantomjs", "extractor.js"])
@@ -336,6 +358,8 @@ class AppTest(unittest.TestCase):
                     "ffprobe",
                     "-protocol_whitelist",
                     "file,crypto,data",
+                    "-format_whitelist",
+                    target.MEDIA_INPUT_FORMATS,
                     "file:unsafe.mp4",
                 ]
             ],
@@ -347,12 +371,81 @@ class AppTest(unittest.TestCase):
                     "ffmpeg",
                     "-protocol_whitelist",
                     "file,crypto,data",
+                    "-format_whitelist",
+                    target.MEDIA_INPUT_FORMATS,
                     "-i",
                     "file:unsafe.mp4",
                     "file:out.mp3",
                 ]
             ],
         )
+
+    @unittest.skipUnless(
+        shutil.which("ffmpeg") and shutil.which("ffprobe"), "FFmpeg is required"
+    )
+    def test_native_media_guard_blocks_disguised_dash_external_file(self) -> None:
+        with tempfile.TemporaryDirectory() as outside_dir:
+            source = Path(outside_dir) / "outside.wav"
+            with wave.open(str(source), "wb") as audio:
+                audio.setnchannels(1)
+                audio.setsampwidth(2)
+                audio.setframerate(8000)
+                audio.writeframes(b"\x00\x00" * 8000)
+
+            # Ordinary audio conversion and MP4 probing must still work.
+            for extension, codec in (("mp3", "libmp3lame"), ("m4a", "aac")):
+                converted = Path(outside_dir) / f"outside.{extension}"
+                command = [
+                    "ffmpeg",
+                    "-v",
+                    "error",
+                    "-i",
+                    str(source),
+                    "-c:a",
+                    codec,
+                    str(converted),
+                ]
+                subprocess.run(
+                    cast(list[str], target.guard_media_command(command)),
+                    check=True,
+                    capture_output=True,
+                    timeout=15,
+                )
+                subprocess.run(
+                    cast(
+                        list[str],
+                        target.guard_media_command(
+                            ["ffprobe", "-v", "error", str(converted)]
+                        ),
+                    ),
+                    check=True,
+                    capture_output=True,
+                    timeout=15,
+                )
+
+            disguised = target.DOWNLOAD_PATH / "download.mp4"
+            disguised.write_text(
+                '<?xml version="1.0"?>'
+                '<MPD xmlns="urn:mpeg:dash:schema:mpd:2011" type="static" '
+                'mediaPresentationDuration="PT1S" minBufferTime="PT1S" '
+                'profiles="urn:mpeg:dash:profile:isoff-on-demand:2011">'
+                '<Period duration="PT1S"><AdaptationSet mimeType="audio/mp4" '
+                'contentType="audio"><Representation id="1" bandwidth="64000" '
+                'codecs="mp4a.40.2">'
+                f"<BaseURL>file:{converted.as_posix()}</BaseURL>"
+                '<SegmentBase indexRange="0-1"><Initialization range="0-1"/>'
+                "</SegmentBase></Representation></AdaptationSet></Period></MPD>",
+                encoding="utf-8",
+            )
+            command = ["ffmpeg", "-v", "error", "-i", str(disguised), "-f", "null", "-"]
+            result = subprocess.run(
+                cast(list[str], target.guard_media_command(command)),
+                capture_output=True,
+                text=True,
+                timeout=15,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("Format not on whitelist", result.stderr)
 
     def test_identifies_only_direct_youtube_video_urls(self) -> None:
         self.assertTrue(target.is_youtube_url(YOUTUBE_URL))
@@ -755,6 +848,18 @@ class AppTest(unittest.TestCase):
             allowed.headers.get("Access-Control-Allow-Headers", ""),
         )
         self.assertNotIn("Access-Control-Allow-Origin", denied.headers)
+
+    def test_matching_untrusted_host_and_origin_cannot_start_a_job(self) -> None:
+        headers = {"Host": "evil.test", "Origin": "http://evil.test"}
+        with patch.object(target, "run_job") as run_job:
+            response = self.client.post(
+                "/inspect", headers=headers, json={"url": YOUTUBE_URL}
+            )
+            preflight = self.client.options("/inspect", headers=headers)
+        self.assertEqual(response.status_code, 403)
+        self.assertNotIn("Access-Control-Allow-Origin", response.headers)
+        self.assertNotIn("Access-Control-Allow-Origin", preflight.headers)
+        run_job.assert_not_called()
 
     def test_inspect_requires_a_json_object(self) -> None:
         with patch.object(target, "run_job") as run_job:
@@ -2478,7 +2583,10 @@ class AppTest(unittest.TestCase):
 
         ready = target.DOWNLOAD_PATH / f"yt-download-locked-{'f' * 32}.mp4"
         ready.write_bytes(b"video" * 20_000)
-        with target.app.test_request_context(f"/downloads/{ready.name}"):
+        with target.app.test_request_context(
+            f"/downloads/{ready.name}",
+            environ_overrides={"gunicorn.socket": self.delivery_socket},
+        ):
             response = target.download_file(ready.name)
         iterator = iter(response.response)
         self.assertTrue(next(iterator))
@@ -2583,6 +2691,7 @@ class AppTest(unittest.TestCase):
         first = self.client.get(f"/downloads/{generated.name}", buffered=True)
         self.assertEqual(first.status_code, 200)
         self.assertEqual(first.data, b"media")
+        self.assertEqual(first.headers["Content-Length"], "5")
         first.close()
 
         self.assertFalse(generated.exists())
@@ -2595,7 +2704,10 @@ class AppTest(unittest.TestCase):
         generated = target.DOWNLOAD_PATH / f"yt-download-test-{'4' * 32}.mp3"
         generated.write_bytes(b"media")
 
-        with target.app.test_request_context(f"/downloads/{generated.name}"):
+        with target.app.test_request_context(
+            f"/downloads/{generated.name}",
+            environ_overrides={"gunicorn.socket": self.delivery_socket},
+        ):
             response = target.download_file(generated.name)
 
         claims = list(target.DOWNLOAD_PATH.glob("*.sending"))
@@ -2614,7 +2726,8 @@ class AppTest(unittest.TestCase):
         generated.write_bytes(b"media")
 
         with target.app.test_request_context(
-            f"/downloads/{generated.name}"
+            f"/downloads/{generated.name}",
+            environ_overrides={"gunicorn.socket": self.delivery_socket},
         ) as context:
             response = target.download_file(generated.name)
             app_iterator = response.get_app_iter(context.request.environ)
@@ -2632,7 +2745,10 @@ class AppTest(unittest.TestCase):
         generated = target.DOWNLOAD_PATH / f"yt-download-test-{'5' * 32}.mp4"
         generated.write_bytes(b"video" * 20_000)
 
-        with target.app.test_request_context(f"/downloads/{generated.name}"):
+        with target.app.test_request_context(
+            f"/downloads/{generated.name}",
+            environ_overrides={"gunicorn.socket": self.delivery_socket},
+        ):
             response = target.download_file(generated.name)
         iterator = iter(response.response)
         self.assertTrue(next(iterator))
@@ -2659,6 +2775,84 @@ class AppTest(unittest.TestCase):
         self.assertTrue(generated.exists())
         self.assertEqual(list(target.DOWNLOAD_PATH.glob("*.sending")), [])
         self.assertEqual(target.ACTIVE_DOWNLOAD_CLAIMS, set())
+
+    def test_delivery_capacity_rejection_preserves_other_ready_files(self) -> None:
+        first = target.DOWNLOAD_PATH / f"yt-download-first-{'1' * 32}.mp3"
+        second = target.DOWNLOAD_PATH / f"yt-download-second-{'2' * 32}.mp3"
+        first.write_bytes(b"media")
+        second.write_bytes(b"other media")
+        response = self.client.get(f"/downloads/{first.name}", buffered=False)
+        try:
+            rejected = self.client.get(f"/downloads/{second.name}")
+            self.assertEqual(rejected.status_code, 429)
+            self.assertEqual(second.read_bytes(), b"other media")
+            head = self.client.head(f"/downloads/{second.name}")
+            self.assertEqual(head.status_code, 200)
+            head.close()
+        finally:
+            response.close()
+        self.assertTrue(first.exists())
+        retried = self.client.get(f"/downloads/{second.name}", buffered=True)
+        self.assertEqual(retried.data, b"other media")
+        retried.close()
+
+    def test_delivery_without_supported_socket_fails_before_claiming(self) -> None:
+        ready = target.DOWNLOAD_PATH / f"yt-download-test-{'1' * 32}.mp3"
+        ready.write_bytes(b"media")
+        response = self.client.get(
+            f"/downloads/{ready.name}", environ_overrides={"gunicorn.socket": None}
+        )
+        self.assertEqual(response.status_code, 503)
+        self.assertTrue(ready.exists())
+        self.assertFalse(target.ACTIVE_DOWNLOAD_CLAIMS)
+
+    def test_delivery_deadline_restores_file_and_socket_timeout(self) -> None:
+        ready = target.DOWNLOAD_PATH / f"yt-download-test-{'1' * 32}.mp3"
+        ready.write_bytes(b"media" * 4000)
+        self.delivery_socket.settimeout(7)
+        with (
+            target.app.test_request_context(
+                f"/downloads/{ready.name}",
+                environ_overrides={"gunicorn.socket": self.delivery_socket},
+            ),
+            patch.object(target, "DOWNLOAD_TIMEOUT_SECONDS", 1),
+            patch.object(target, "monotonic", side_effect=[0.0, 0.0, 2.0]),
+        ):
+            response = target.download_file(ready.name)
+            iterator = iter(response.response)
+            self.assertTrue(next(iterator))
+            with self.assertRaisesRegex(TimeoutError, "delivery deadline"):
+                next(iterator)
+            response.close()
+        self.assertEqual(self.delivery_socket.gettimeout(), 7)
+        self.assertTrue(ready.exists())
+        self.assertFalse(target.ACTIVE_DOWNLOAD_CLAIMS)
+
+    def test_delivery_timeout_interrupts_a_real_blocked_socket_write(self) -> None:
+        writer, reader = socket.socketpair()
+        self.addCleanup(writer.close)
+        self.addCleanup(reader.close)
+        writer.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 4096)
+        reader.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4096)
+        ready = target.DOWNLOAD_PATH / f"yt-download-test-{'1' * 32}.mp3"
+        ready.write_bytes(b"media" * 4000)
+        with patch.object(target, "SOCKET_TIMEOUT_SECONDS", 0.05):
+            response = self.client.get(
+                f"/downloads/{ready.name}",
+                environ_overrides={"gunicorn.socket": writer},
+                buffered=False,
+            )
+        try:
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(writer.gettimeout(), 0.05)
+            with self.assertRaises(TimeoutError):
+                for _ in range(1024):
+                    writer.sendall(b"x" * 65536)
+        finally:
+            response.close()
+        self.assertIsNone(writer.gettimeout())
+        self.assertTrue(ready.exists())
+        self.assertFalse(target.ACTIVE_DOWNLOAD_CLAIMS)
 
     def test_expired_download_is_deleted_before_head_or_claim(self) -> None:
         for size, age in ((9, 201), (10, 401)):
@@ -2931,6 +3125,7 @@ class AppTest(unittest.TestCase):
         try:
             with (
                 patch.object(target, "TRUST_X_REAL_IP", False),
+                patch.object(target, "ALLOWED_ORIGINS", {"https://media.example"}),
                 patch.object(target, "RATE_LIMIT_REQUESTS", 1),
                 patch.object(
                     target,
@@ -2978,6 +3173,7 @@ class AppTest(unittest.TestCase):
             with (
                 patch.object(target, "TRUST_PROXY_HEADERS", True),
                 patch.object(target, "TRUST_X_REAL_IP", True),
+                patch.object(target, "ALLOWED_ORIGINS", {"https://media.example"}),
                 patch.object(target, "RATE_LIMIT_REQUESTS", 1),
                 patch.object(
                     target,
@@ -3031,6 +3227,7 @@ class AppTest(unittest.TestCase):
         self.assertEqual(target.MAX_STORED_BYTES, 648 * 1024 * 1024)
         self.assertEqual(target.MAX_PLAYLIST_ITEMS, 50)
         self.assertEqual(target.SOCKET_TIMEOUT_SECONDS, 15)
+        self.assertEqual(target.DOWNLOAD_TIMEOUT_SECONDS, 600)
         self.assertEqual(target.JOB_TIMEOUT_SECONDS, 900)
         self.assertEqual(target.JOB_MEMORY_BYTES, 192 * 1024 * 1024)
         self.assertEqual(target.MAX_HLS_MANIFEST_BYTES, 8 * 1024 * 1024)
@@ -3043,6 +3240,7 @@ class AppTest(unittest.TestCase):
         for name in (
             "MAX_PLAYLIST_ITEMS",
             "SOCKET_TIMEOUT_SECONDS",
+            "DOWNLOAD_TIMEOUT_SECONDS",
             "JOB_TIMEOUT_SECONDS",
             "JOB_MEMORY_BYTES",
             "MAX_HLS_MANIFEST_BYTES",
