@@ -78,6 +78,8 @@ installation:
 - only public, specialized extractors are allowed;
 - every Python HTTP/WebSocket DNS result is blocked unless all resolved
   addresses are globally routable;
+- FFmpeg and ffprobe accept only ordinary media containers; nested playlists
+  such as DASH, HLS, and concat cannot open other local files during conversion;
 - the `curl-cffi` browser-impersonation transport is not installed because its
   internal redirect resolver cannot use that process guard on this host;
 - cookies, account credentials, plugins, remote components, proxies, and
@@ -101,6 +103,8 @@ The configured production profile uses these hard limits:
 | One HLS manifest | 8 MiB |
 | Playlist inspection | 50 entries |
 | Concurrent extraction jobs | 1 |
+| Concurrent file deliveries | 1 |
+| One file delivery | 10 minutes; each blocked socket write at most 15 seconds |
 | Extraction operations per client | 5 per hour |
 | Extraction operations across all clients | 60 per hour |
 | Request body | 16 KiB |
@@ -142,6 +146,12 @@ released claim after a process crash can be restored without overwriting an
 existing file. This is retry-safe, at-least-once delivery, not exactly-once
 delivery.
 
+File delivery requires Gunicorn or the local Werkzeug development server,
+which expose the response socket for write deadlines. Other WSGI servers return
+503 before claiming a file. A concurrent delivery returns 429 without consuming
+the requested file. A timed-out transfer closes its connection and restores the
+file for another attempt until its normal TTL.
+
 Cleanup runs at startup, before work, during idle health requests, and through
 an alwaysdata scheduled URL request every minute. Normal idle expiry is the TTL
 plus less than one scheduler interval. This is a cleanup target, not an erasure
@@ -164,8 +174,9 @@ python app.py
 ```
 
 Open `http://localhost:8080`. A local browser request needs an allowed `Origin`;
-set `ALLOWED_ORIGINS=http://localhost:8080` when serving the UI from another
-local origin.
+the default configuration includes `http://localhost:8080` and
+`http://127.0.0.1:8080`. Set `ALLOWED_ORIGINS` explicitly for another UI address.
+Matching `Host` and `Origin` headers never add an origin to this list.
 
 ### Configuration
 
@@ -175,7 +186,8 @@ local origin.
 | `HOST` | `0.0.0.0` | Development server bind address |
 | `PORT` | `8080` | Development server port |
 | `MAX_RETRIES` | `3` | Extractor and fragment retry count |
-| `SOCKET_TIMEOUT_SECONDS` | `15` | Extractor network timeout |
+| `SOCKET_TIMEOUT_SECONDS` | `15` | Extractor network and file-delivery socket-write timeout |
+| `DOWNLOAD_TIMEOUT_SECONDS` | `600` | Total wall-clock budget for one file delivery |
 | `JOB_TIMEOUT_SECONDS` | `900` | Total wall-clock budget for one helper job |
 | `JOB_MEMORY_BYTES` | `150994944` hosted (`201326592` default) | Total helper process-group RSS ceiling on Linux |
 | `MAX_HLS_MANIFEST_BYTES` | `8388608` | Maximum actual HLS manifest body size |
@@ -194,7 +206,7 @@ local origin.
 | `RATE_LIMIT_MAX_CLIENTS` | `2048` | Bounded in-memory client tracking |
 | `TRUST_PROXY_HEADERS` | `0` | Trust one proxy hop for HTTPS scheme and Render's client IP |
 | `TRUST_X_REAL_IP` | `0` | alwaysdata only: trust its validated `X-Real-IP` instead of XFF |
-| `ALLOWED_ORIGINS` | `https://majkey25.github.io` | Comma-separated exact browser origins allowed by CORS |
+| `ALLOWED_ORIGINS` | Pages, the documented alwaysdata backend, and localhost/127.0.0.1 on port 8080 | Comma-separated exact browser origins allowed by CORS; setting it replaces all defaults |
 
 Run production with one Gunicorn worker so the process-local job semaphore
 remains authoritative:
@@ -228,7 +240,8 @@ deadline. It is an outer worker-crash guard, not an extension of a job budget.
    `MAX_MEDIA_BYTES=226492416`, `MAX_STORED_BYTES=679477248`,
    `JOB_TIMEOUT_SECONDS=900`, `JOB_MEMORY_BYTES=150994944`,
    `MAX_HLS_MANIFEST_BYTES=8388608`, `GLOBAL_RATE_LIMIT_REQUESTS=60`, and the
-   exact Pages origin in `ALLOWED_ORIGINS`. Set `TRUST_PROXY_HEADERS=1` and
+   exact Pages origin in `ALLOWED_ORIGINS`. Include the backend's HTTPS origin
+   too if its same-origin UI is used. Set `TRUST_PROXY_HEADERS=1` and
    `TRUST_X_REAL_IP=1` so the app uses alwaysdata's trusted `X-Real-IP` for
    per-user limits and
    `X-Forwarded-Proto` for HTTPS same-origin checks. Do not enable it when the

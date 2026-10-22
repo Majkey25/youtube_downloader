@@ -81,6 +81,7 @@ from yt_dlp.utils import (  # noqa: E402
 from config import (  # noqa: E402
     ALLOWED_ORIGINS,
     DOWNLOAD_DIR,
+    DOWNLOAD_TIMEOUT_SECONDS,
     GLOBAL_RATE_LIMIT_REQUESTS,
     HOST,
     JOB_MEMORY_BYTES,
@@ -312,6 +313,9 @@ PROXY_ENVIRONMENT_KEYS = (
 )
 WEB_PORTS = frozenset({80, 443, "80", "443", "http", "https", b"80", b"443"})
 NETWORK_FREE_PROTOCOLS = "file,crypto,data"
+MEDIA_INPUT_FORMATS = (
+    "aac,flac,matroska,webm,mov,mp4,m4a,3gp,3g2,mj2,mp3,ogg,wav,mpegts,mpeg,flv,avi"
+)
 FFMPEG_EXECUTABLES = frozenset({"ffmpeg", "ffmpeg.exe", "avconv", "avconv.exe"})
 FFPROBE_EXECUTABLES = frozenset(
     {"ffprobe", "ffprobe.exe", "avprobe", "avprobe.exe"}
@@ -631,33 +635,29 @@ def guard_media_command(command: object) -> object:
     if name not in FFMPEG_EXECUTABLES | FFPROBE_EXECUTABLES:
         return command
     for argument in command[1:]:
-        if (
-            isinstance(argument, str)
-            and (
-                argument == "-protocol_whitelist"
-                or argument.startswith("-protocol_whitelist=")
-            )
-        ) or (
-            isinstance(argument, bytes)
-            and (
-                argument == b"-protocol_whitelist"
-                or argument.startswith(b"-protocol_whitelist=")
-            )
-        ):
-            raise EngineError("The media processor protocol policy was overridden.")
+        if isinstance(argument, str | bytes):
+            option = os.fsdecode(argument).split("=", 1)[0]
+            if option in {"-protocol_whitelist", "-format_whitelist"}:
+                raise EngineError("The media processor input policy was overridden.")
 
-    encoded = isinstance(executable, bytes)
-    flag = b"-protocol_whitelist" if encoded else "-protocol_whitelist"
-    protocols = (
-        NETWORK_FREE_PROTOCOLS.encode() if encoded else NETWORK_FREE_PROTOCOLS
+    policy = [
+        "-protocol_whitelist",
+        NETWORK_FREE_PROTOCOLS,
+        "-format_whitelist",
+        MEDIA_INPUT_FORMATS,
+    ]
+    flags: list[str] | list[bytes] = (
+        [argument.encode() for argument in policy]
+        if isinstance(executable, bytes)
+        else policy
     )
     if name in FFPROBE_EXECUTABLES:
-        return [command[0], flag, protocols, *command[1:]]
+        return [command[0], *flags, *command[1:]]
 
     guarded: list[object] = [command[0]]
     for argument in command[1:]:
         if isinstance(argument, str | bytes) and os.fsdecode(argument) == "-i":
-            guarded.extend((flag, protocols))
+            guarded.extend(flags)
         guarded.append(argument)
     return guarded
 
@@ -1862,6 +1862,13 @@ def _wait_for_job(process: subprocess.Popen[bytes], deadline: float) -> None:
                 first_memory_sample = False
                 sleep(JOB_POLL_SECONDS)
                 continue
+            # Linux releases process memory before the exit becomes waitable.
+            try:
+                process.wait(timeout=JOB_POLL_SECONDS)
+            except subprocess.TimeoutExpired:
+                pass
+            else:
+                break
             _terminate_process_tree(process)
             raise EngineError("The media operation memory monitor failed.")
         first_memory_sample = False
@@ -2190,9 +2197,7 @@ def resolve_download_path(filename: str) -> Path | None:
 
 def request_origin_is_allowed() -> bool:
     origin = request.headers.get("Origin", "").rstrip("/")
-    return bool(origin) and (
-        origin == request.host_url.rstrip("/") or origin in ALLOWED_ORIGINS
-    )
+    return origin in ALLOWED_ORIGINS
 
 
 def request_client_id() -> str:
@@ -2291,9 +2296,7 @@ def _error_response(error: Exception) -> tuple[Response, int]:
 @app.after_request
 def add_response_headers(response: Response) -> Response:
     origin = request.headers.get("Origin", "").rstrip("/")
-    if origin and (
-        origin == request.host_url.rstrip("/") or origin in ALLOWED_ORIGINS
-    ):
+    if request_origin_is_allowed():
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
         response.headers["Access-Control-Allow-Headers"] = "Content-Type"
@@ -2471,6 +2474,15 @@ def download_file(filename: str) -> Response:
                 as_attachment=True,
                 conditional=False,
             )
+        if ACTIVE_DOWNLOAD_CLAIMS:
+            _close_locked(claim_handle)
+            abort(429, description="Another file is being delivered. Try again later.")
+        client_socket = request.environ.get(
+            "gunicorn.socket", request.environ.get("werkzeug.socket")
+        )
+        if not isinstance(client_socket, socket.socket):
+            _close_locked(claim_handle)
+            abort(503, description="File delivery requires Gunicorn or Werkzeug.")
         try:
             file_path.replace(claimed_path)
         except FileNotFoundError:
@@ -2492,6 +2504,8 @@ def download_file(filename: str) -> Response:
     source: Iterable[bytes] | None = None
     completed = False
     finalized = False
+    deadline = monotonic() + DOWNLOAD_TIMEOUT_SECONDS
+    previous_timeout = client_socket.gettimeout()
 
     def finalize() -> None:
         nonlocal finalized
@@ -2527,15 +2541,23 @@ def download_file(filename: str) -> Response:
                         except Exception:  # noqa: BLE001
                             logging.exception("Failed to close download stream")
                 ACTIVE_DOWNLOAD_CLAIMS.discard(claimed_path)
+                with suppress(OSError):
+                    if not completed:
+                        client_socket.shutdown(socket.SHUT_RDWR)
+                with suppress(OSError):
+                    client_socket.settimeout(previous_timeout)
 
     try:
         assert claim_handle is not None
+        client_socket.settimeout(min(SOCKET_TIMEOUT_SECONDS, DOWNLOAD_TIMEOUT_SECONDS))
         response = send_file(
             claim_handle,
             as_attachment=True,
             download_name=filename,
             conditional=False,
         )
+        # No chunk terminator may remain after finalization restores the socket.
+        response.content_length = file_stat.st_size
     except Exception:
         finalize()
         raise
@@ -2547,7 +2569,13 @@ def download_file(filename: str) -> Response:
     def stream_and_finalize() -> Iterator[bytes]:
         nonlocal completed
         try:
-            yield from source
+            for chunk in source:
+                remaining = deadline - monotonic()
+                if remaining <= 0:
+                    raise TimeoutError("The file delivery deadline expired.")
+                # WSGI writes after yield; bound the blocked socket write itself.
+                client_socket.settimeout(min(SOCKET_TIMEOUT_SECONDS, remaining))
+                yield chunk
             completed = True
         finally:
             finalize()

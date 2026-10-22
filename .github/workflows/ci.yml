@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - name: Install dependencies
+        run: |
+          uv venv --python 3.12
+          uv pip install -r requirements.txt ruff pyright
+          if ! command -v ffmpeg >/dev/null || ! command -v ffprobe >/dev/null; then
+            printf '%s\n' 'https://archive.ubuntu.com/ubuntu/' | sudo tee /etc/apt/apt-mirrors.txt
+            sudo apt-get -o Acquire::https::Timeout=20 -o Acquire::Retries=1 update
+            sudo apt-get -o Acquire::https::Timeout=20 -o Acquire::Retries=1 install --yes --no-install-recommends ffmpeg
+          fi
+          ffmpeg -version
+          ffprobe -version
+      - name: Check Python
+        run: |
+          uv run --no-project ruff check .
+          uv run --no-project pyright
+      - name: Test application and Gunicorn delivery
+        run: uv run --no-project python -m unittest -v

@@ -8,6 +8,6 @@ select = ["B", "E", "F", "I", "SIM", "UP"]
 
 [tool.pyright]
 exclude = [".reference", "downloads"]
-include = ["app.py", "config.py", "test_app.py"]
+include = ["app.py", "config.py", "test_app.py", "test_gunicorn.py"]
 pythonVersion = "3.10"
 typeCheckingMode = "standard"

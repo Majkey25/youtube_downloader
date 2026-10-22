@@ -5,7 +5,10 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).parent
 DEFAULT_DOWNLOAD_DIR = ROOT_DIR / "downloads"
-DEFAULT_ALLOWED_ORIGINS = "https://majkey25.github.io"
+DEFAULT_ALLOWED_ORIGINS = (
+    "https://majkey25.github.io,https://majkey25-ytdl.alwaysdata.net,"
+    "http://localhost:8080,http://127.0.0.1:8080"
+)
 
 DOWNLOAD_DIR = Path(os.getenv("DOWNLOAD_DIR", DEFAULT_DOWNLOAD_DIR)).resolve()
 HOST = os.getenv("HOST", "0.0.0.0")
@@ -16,6 +19,7 @@ MAX_MEDIA_BYTES = int(os.getenv("MAX_MEDIA_BYTES", str(216 * 1024 * 1024)))
 MAX_STORED_BYTES = int(os.getenv("MAX_STORED_BYTES", str(648 * 1024 * 1024)))
 MAX_PLAYLIST_ITEMS = int(os.getenv("MAX_PLAYLIST_ITEMS", "50"))
 SOCKET_TIMEOUT_SECONDS = int(os.getenv("SOCKET_TIMEOUT_SECONDS", "15"))
+DOWNLOAD_TIMEOUT_SECONDS = int(os.getenv("DOWNLOAD_TIMEOUT_SECONDS", "600"))
 JOB_TIMEOUT_SECONDS = int(os.getenv("JOB_TIMEOUT_SECONDS", "900"))
 JOB_MEMORY_BYTES = int(os.getenv("JOB_MEMORY_BYTES", str(192 * 1024 * 1024)))
 MAX_HLS_MANIFEST_BYTES = int(
@@ -50,6 +54,7 @@ if (
         MAX_STORED_BYTES,
         MAX_PLAYLIST_ITEMS,
         SOCKET_TIMEOUT_SECONDS,
+        DOWNLOAD_TIMEOUT_SECONDS,
         JOB_TIMEOUT_SECONDS,
         JOB_MEMORY_BYTES,
         MAX_HLS_MANIFEST_BYTES,
