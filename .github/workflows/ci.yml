@@ -12,6 +12,7 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -21,8 +22,8 @@ jobs:
         run: |
           uv venv --python 3.12
           uv pip install -r requirements.txt ruff pyright
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg
+          sudo apt-get -o Acquire::http::Timeout=20 -o Acquire::Retries=1 update
+          sudo apt-get -o Acquire::http::Timeout=20 -o Acquire::Retries=1 install --yes --no-install-recommends ffmpeg
       - name: Check Python
         run: |
           uv run --no-project ruff check .
