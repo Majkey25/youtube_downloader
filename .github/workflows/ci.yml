@@ -22,8 +22,13 @@ jobs:
         run: |
           uv venv --python 3.12
           uv pip install -r requirements.txt ruff pyright
-          sudo apt-get -o Acquire::http::Timeout=20 -o Acquire::Retries=1 update
-          sudo apt-get -o Acquire::http::Timeout=20 -o Acquire::Retries=1 install --yes --no-install-recommends ffmpeg
+          if ! command -v ffmpeg >/dev/null || ! command -v ffprobe >/dev/null; then
+            printf '%s\n' 'https://archive.ubuntu.com/ubuntu/' | sudo tee /etc/apt/apt-mirrors.txt
+            sudo apt-get -o Acquire::https::Timeout=20 -o Acquire::Retries=1 update
+            sudo apt-get -o Acquire::https::Timeout=20 -o Acquire::Retries=1 install --yes --no-install-recommends ffmpeg
+          fi
+          ffmpeg -version
+          ffprobe -version
       - name: Check Python
         run: |
           uv run --no-project ruff check .
