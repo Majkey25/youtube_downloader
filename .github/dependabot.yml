@@ -1,0 +1,21 @@
+# Check twice weekly in UTC, with stable times per repository, ecosystem and directory.
+version: 2
+updates:
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: cron
+      cronjob: "51 7 * * 0,4"
+      timezone: Etc/UTC
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: cron
+      cronjob: "30 16 * * 0,3"
+      timezone: Etc/UTC
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: cron
+      cronjob: "42 0 * * 2,6"
+      timezone: Etc/UTC
