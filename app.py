@@ -2444,6 +2444,9 @@ def download_file(filename: str) -> Response:
     if file_path is None:
         abort(400)
     assert file_path is not None
+    download_name = (
+        file_path.stem.removeprefix("yt-download-").rsplit("-", 1)[0] + file_path.suffix
+    )
     claimed_path = DOWNLOAD_PATH / f"{filename}.{uuid4().hex}.sending"
     claim_handle: BinaryIO | None = None
     with DOWNLOAD_FILES_LOCK:
@@ -2472,6 +2475,7 @@ def download_file(filename: str) -> Response:
                 str(DOWNLOAD_PATH),
                 filename,
                 as_attachment=True,
+                download_name=download_name,
                 conditional=False,
             )
         if ACTIVE_DOWNLOAD_CLAIMS:
@@ -2553,7 +2557,7 @@ def download_file(filename: str) -> Response:
         response = send_file(
             claim_handle,
             as_attachment=True,
-            download_name=filename,
+            download_name=download_name,
             conditional=False,
         )
         # No chunk terminator may remain after finalization restores the socket.

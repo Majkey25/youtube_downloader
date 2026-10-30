@@ -18,6 +18,7 @@ from typing import cast
 from unittest.mock import ANY, MagicMock, call, patch
 
 from flask.testing import FlaskClient
+from werkzeug.http import parse_options_header
 from youtube_dl.downloader import get_suitable_downloader
 from youtube_dl.downloader.http import HttpFD
 
@@ -2720,6 +2721,37 @@ class AppTest(unittest.TestCase):
             self.client.get(f"/downloads/{generated.name}").status_code,
             404,
         )
+
+    def test_download_attachment_uses_title_without_internal_identifiers(self) -> None:
+        for title, extension in (
+            ("Original video title", "mp4"),
+            ("yt-download-original-title", "mp3"),
+            ("Příspěvek číslo 2", "webm"),
+        ):
+            with self.subTest(title=title, extension=extension):
+                generated = (
+                    target.DOWNLOAD_PATH / f"yt-download-{title}-{'b' * 32}.{extension}"
+                )
+                generated.write_bytes(b"media")
+                head = self.client.head(f"/downloads/{generated.name}")
+                self.assertEqual(head.status_code, 200)
+                self.assertEqual(
+                    parse_options_header(head.headers["Content-Disposition"]),
+                    ("attachment", {"filename": f"{title}.{extension}"}),
+                )
+                head.close()
+                self.assertTrue(generated.exists())
+                response = self.client.get(
+                    f"/downloads/{generated.name}", buffered=True
+                )
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data, b"media")
+                self.assertEqual(
+                    response.headers["Content-Disposition"],
+                    head.headers["Content-Disposition"],
+                )
+                response.close()
+                self.assertFalse(generated.exists())
 
     def test_unstarted_file_response_restores_its_active_claim(self) -> None:
         generated = target.DOWNLOAD_PATH / f"yt-download-test-{'4' * 32}.mp3"
