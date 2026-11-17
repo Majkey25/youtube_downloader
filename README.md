@@ -41,11 +41,13 @@ downloader.
   Media with a known duration over 120 minutes is blocked in every mode.
 
 The project pins its direct primary engine requirement to
-`yt-dlp[pin]==2026.8.4.234419.dev0`. Install Deno 2.6.6 or newer on `PATH`
-(the hosted service uses the verified system Deno). The upstream `pin` extra
+`yt-dlp[pin]==2026.10.26` on Python 3.11 or newer. Python 3.10 uses the last
+compatible stable release, `yt-dlp[default]==2026.10.21`, with patched Brotli
+dependencies instead of that release's vulnerable `pin` extra.
+Install Deno 2.9.8 or newer on `PATH`. The upstream `pin` extra
 pins the primary engine's default Python dependencies. The direct legacy
 fallback requirement is pinned to `youtube-dl` commit
-[`956b8c5`](https://github.com/ytdl-org/youtube-dl/commit/956b8c585591b401a543e409accb163eeaaa1193).
+[`bc069d2`](https://github.com/ytdl-org/youtube-dl/commit/bc069d2bb40bcbc5bdfdf352ca15bf586c7792cb).
 Transitive dependencies are resolved by `pip`; this repository does not contain
 a complete dependency lock file.
 Fallback is attempted only after a primary extractor/download failure for a
@@ -164,7 +166,7 @@ Requirements:
 
 - Python 3.10 or newer;
 - `ffmpeg` and `ffprobe` available on `PATH`;
-- Deno 2.6.6 or newer available on `PATH`.
+- Deno 2.9.8 or newer available on `PATH`.
 
 ```powershell
 python -m venv .venv
@@ -234,8 +236,8 @@ deadline. It is an outer worker-crash guard, not an extension of a job budget.
      --access-logfile - app:app
    ```
 
-   The current alwaysdata host provides Deno 2.9.2, but that host-managed
-   version can drift; the Docker image separately pins `deno==2.8.3`.
+   Verify the host-managed Deno meets the minimum version before restarting;
+   the Docker image separately pins `deno==2.9.8`.
 3. Set the production values above, including
    `MAX_MEDIA_BYTES=226492416`, `MAX_STORED_BYTES=679477248`,
    `JOB_TIMEOUT_SECONDS=900`, `JOB_MEMORY_BYTES=150994944`,
