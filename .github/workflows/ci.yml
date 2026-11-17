@@ -38,3 +38,20 @@ jobs:
           uv run --no-project pyright
       - name: Test application and Gunicorn delivery
         run: uv run --no-project python -m unittest -v
+
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Build production image
+        run: docker build --tag media-downloader:ci .
+      - name: Check image Deno runtime
+        run: docker run --rm --network none media-downloader:ci deno --version
+      - name: Test Gunicorn delivery in production image
+        run: |
+          docker run --rm --network none \
+            --mount "type=bind,source=$GITHUB_WORKSPACE/test_gunicorn.py,target=/app/test_gunicorn.py,readonly" \
+            media-downloader:ci python -m unittest -v test_gunicorn
